@@ -1,7 +1,9 @@
 package com.nrstudio.portail.services;
 
 import com.nrstudio.portail.depots.TicketRepository;
+import com.nrstudio.portail.depots.UtilisateurRepository;
 import com.nrstudio.portail.domaine.Ticket;
+import com.nrstudio.portail.domaine.Utilisateur;
 import com.nrstudio.portail.dto.TicketCreationRequete;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,17 +11,27 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class TicketService {
 
   private final TicketRepository tickets;
   private final JdbcTemplate crmJdbc;
+  private final EmailNotificationService emailService;
+  private final WhatsAppNotificationService whatsAppService;
+  private final UtilisateurRepository utilisateurs;
 
   public TicketService(TicketRepository tickets,
-                       @Qualifier("crmJdbc") JdbcTemplate crmJdbc) {
+                       @Qualifier("crmJdbc") JdbcTemplate crmJdbc,
+                       EmailNotificationService emailService,
+                       WhatsAppNotificationService whatsAppService,
+                       UtilisateurRepository utilisateurs) {
     this.tickets = tickets;
     this.crmJdbc = crmJdbc;
+    this.emailService = emailService;
+    this.whatsAppService = whatsAppService;
+    this.utilisateurs = utilisateurs;
   }
 
   @Transactional
@@ -76,7 +88,127 @@ public class TicketService {
       t = tickets.save(t);
     }
 
+    envoyerNotificationsCreation(t);
+
     return t;
+  }
+
+  @Transactional
+  public Ticket changerStatut(Integer ticketId, Integer nouveauStatutId, Integer utilisateurId) {
+    Ticket t = tickets.findById(ticketId)
+      .orElseThrow(() -> new IllegalArgumentException("Ticket introuvable"));
+
+    Integer ancienStatutId = t.getStatutTicketId();
+    t.setStatutTicketId(nouveauStatutId);
+    t.setDateMiseAJour(LocalDateTime.now());
+
+    if (nouveauStatutId == 4) {
+      t.setDateCloture(LocalDateTime.now());
+      t.setClotureParUtilisateurId(utilisateurId);
+    }
+
+    t = tickets.save(t);
+
+    if (t.getIdExterneCrm() != null) {
+      String nouveauStatutCrm = mapStatutIdToCrmString(nouveauStatutId);
+      crmJdbc.update(
+        "UPDATE dbo.Cases SET Case_Status = ?, Case_Closed = ? WHERE Case_CaseId = ?",
+        nouveauStatutCrm,
+        nouveauStatutId == 4 ? LocalDateTime.now() : null,
+        t.getIdExterneCrm()
+      );
+    }
+
+    envoyerNotificationsChangementStatut(t, ancienStatutId, nouveauStatutId);
+
+    return t;
+  }
+
+  @Transactional
+  public List<Ticket> listerTicketsClient(Integer clientId) {
+    return tickets.findAll().stream()
+      .filter(ticket -> ticket.getClientId().equals(clientId))
+      .toList();
+  }
+
+  @Transactional
+  public List<Ticket> listerTicketsConsultant(Integer consultantId) {
+    return tickets.findAll().stream()
+      .filter(ticket -> consultantId.equals(ticket.getAffecteAUtilisateurId()))
+      .toList();
+  }
+
+  private void envoyerNotificationsCreation(Ticket t) {
+    try {
+      Utilisateur createur = utilisateurs.findById(t.getCreeParUtilisateurId()).orElse(null);
+      if (createur != null && createur.getEmail() != null) {
+        emailService.envoyerNotificationTicketCree(
+          createur.getEmail(),
+          t.getReference(),
+          t.getTitre()
+        );
+
+        if (createur.getTelephone() != null) {
+          whatsAppService.envoyerNotificationTicketCree(
+            createur.getTelephone(),
+            t.getReference(),
+            t.getTitre()
+          );
+        }
+      }
+
+      if (t.getAffecteAUtilisateurId() != null) {
+        Utilisateur consultant = utilisateurs.findById(t.getAffecteAUtilisateurId()).orElse(null);
+        if (consultant != null && consultant.getEmail() != null) {
+          emailService.envoyerNotificationTicketCree(
+            consultant.getEmail(),
+            t.getReference(),
+            t.getTitre()
+          );
+        }
+      }
+    } catch (Exception e) {
+      System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
+    }
+  }
+
+  private void envoyerNotificationsChangementStatut(Ticket t, Integer ancienStatutId, Integer nouveauStatutId) {
+    try {
+      String ancienStatut = mapStatutIdToCrmString(ancienStatutId);
+      String nouveauStatut = mapStatutIdToCrmString(nouveauStatutId);
+
+      Utilisateur createur = utilisateurs.findById(t.getCreeParUtilisateurId()).orElse(null);
+      if (createur != null && createur.getEmail() != null) {
+        emailService.envoyerNotificationChangementStatut(
+          createur.getEmail(),
+          t.getReference(),
+          ancienStatut,
+          nouveauStatut
+        );
+
+        if (createur.getTelephone() != null) {
+          whatsAppService.envoyerNotificationChangementStatut(
+            createur.getTelephone(),
+            t.getReference(),
+            nouveauStatut
+          );
+        }
+      }
+
+      if (t.getAffecteAUtilisateurId() != null) {
+        Utilisateur consultant = utilisateurs.findById(t.getAffecteAUtilisateurId()).orElse(null);
+        if (consultant != null && consultant.getEmail() != null) {
+          emailService.envoyerNotificationChangementStatut(
+            consultant.getEmail(),
+            t.getReference(),
+            ancienStatut,
+            nouveauStatut
+          );
+        }
+      }
+    } catch (Exception e) {
+      System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
+    }
   }
 
   private String truncate(String s, int max) {

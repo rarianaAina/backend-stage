@@ -29,4 +29,21 @@ public class TicketControleur {
 
   @PostMapping
   public Ticket creer(@RequestBody TicketCreationRequete req) { return service.creerEtSynchroniser(req); }
+
+  @PutMapping("/{id}/statut")
+  public Ticket changerStatut(@PathVariable("id") Integer id, @RequestBody java.util.Map<String, Object> requete) {
+    Integer nouveauStatutId = (Integer) requete.get("statutId");
+    Integer utilisateurId = (Integer) requete.get("utilisateurId");
+    return service.changerStatut(id, nouveauStatutId, utilisateurId);
+  }
+
+  @GetMapping("/client/{clientId}")
+  public List<Ticket> listerParClient(@PathVariable("clientId") Integer clientId) {
+    return service.listerTicketsClient(clientId);
+  }
+
+  @GetMapping("/consultant/{consultantId}")
+  public List<Ticket> listerParConsultant(@PathVariable("consultantId") Integer consultantId) {
+    return service.listerTicketsConsultant(consultantId);
+  }
 }
