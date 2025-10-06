@@ -15,6 +15,7 @@ public class Utilisateur {
 
   private String nom;
   private String prenom;
+  private String telephone;
 
   @Column(length=320) private String email;
   @Column(nullable=false) private boolean actif = true;
