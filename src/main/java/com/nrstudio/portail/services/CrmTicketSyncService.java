@@ -26,7 +26,7 @@ public class CrmTicketSyncService {
     this.tickets = tickets;
   }
 
-  @Scheduled(cron = "0 * * * * *") // toutes les 30 min
+  @Scheduled(cron = "0 */30 * * * *")
   @Transactional
   public void importerDepuisCrm() {
     final String sql =
