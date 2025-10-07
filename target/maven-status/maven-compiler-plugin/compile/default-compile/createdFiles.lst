@@ -28,6 +28,7 @@ com\nrstudio\portail\domaine\Intervention.class
 com\nrstudio\portail\domaine\Utilisateur.class
 com\nrstudio\portail\depots\InterventionRepository.class
 com\nrstudio\portail\services\EmailNotificationService.class
+com\nrstudio\portail\controleurs\test\TestEmailController.class
 com\nrstudio\portail\domaine\Interaction.class
 com\nrstudio\portail\dto\InterventionCreationRequete.class
 com\nrstudio\portail\domaine\PieceJointe.class
@@ -35,6 +36,7 @@ com\nrstudio\portail\controleurs\PieceJointeControleur.class
 com\nrstudio\portail\dto\ConnexionReponse.class
 com\nrstudio\portail\controleurs\TicketControleur.class
 com\nrstudio\portail\services\CrmTicketSyncService.class
+com\nrstudio\portail\controleurs\test\TestWhatsappController.class
 com\nrstudio\portail\depots\TicketRepository.class
 com\nrstudio\portail\dto\UtilisateursDtos$ConnexionRequete.class
 com\nrstudio\portail\PortailApplication.class
