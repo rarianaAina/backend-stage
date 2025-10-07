@@ -34,8 +34,6 @@ logs/
 
 # Fichiers de configuration sensibles (CRITIQUE)
 
-application.properties
-
 application.propertiesTemp
 application-*.properties
 
