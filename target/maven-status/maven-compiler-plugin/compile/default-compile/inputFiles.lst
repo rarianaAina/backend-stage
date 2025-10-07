@@ -1,36 +1,39 @@
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\controleurs\UtilisateurControleur.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\services\TicketService.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\dto\ConnexionReponse.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\domaine\Intervention.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\domaine\Ticket.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\depots\InterventionRepository.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\securite\JwtSimple.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\depots\TicketRepository.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\depots\UtilisateurRepository.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\services\InterventionService.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\dto\ConnexionRequete.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\dto\TicketCreationRequete.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\services\WhatsAppNotificationService.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\services\CrmTicketSyncService.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\controleurs\DiagnosticControleur.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\PortailApplication.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\domaine\PieceJointe.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\config\CrmDataSourceConfig.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\services\UtilisateurService.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\controleurs\PieceJointeControleur.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\dto\MotDePasseRequete.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\depots\InteractionRepository.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\depots\PieceJointeRepository.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\controleurs\InterventionControleur.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\domaine\Utilisateur.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\dto\UtilisateurMiseAJourRequete.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\services\CrmInterventionSyncService.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\dto\UtilisateurCreationRequete.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\controleurs\InteractionControleur.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\dto\InterventionCreationRequete.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\services\EmailNotificationService.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\controleurs\TicketControleur.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\controleurs\AuthControleur.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\services\CrmUtilisateurSyncService.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\domaine\Interaction.java
-D:\ITU\Stage\Projet\backend\backend-stage\src\main\java\com\nrstudio\portail\dto\UtilisateursDtos.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\depots\InterventionRepository.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\UtilisateurControleur.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\test\TestEmailController.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\DiagnosticControleur.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\dto\TicketCreationRequete.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\domaine\Intervention.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\services\TicketService.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\PieceJointeControleur.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\dto\ConnexionReponse.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\dto\InterventionCreationRequete.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\services\CrmTicketSyncService.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\services\CrmUtilisateurSyncService.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\dto\UtilisateurCreationRequete.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\domaine\Ticket.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\emailtest\EmailTestApp.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\InterventionControleur.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\domaine\Interaction.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\AuthControleur.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\depots\TicketRepository.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\PortailApplication.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\TicketControleur.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\dto\UtilisateurMiseAJourRequete.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\dto\ConnexionRequete.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\domaine\PieceJointe.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\securite\JwtSimple.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\domaine\Utilisateur.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\depots\InteractionRepository.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\services\CrmInterventionSyncService.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\services\EmailNotificationService.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\dto\MotDePasseRequete.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\services\UtilisateurService.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\InteractionControleur.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\controleurs\test\TestWhatsappController.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\depots\UtilisateurRepository.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\services\InterventionService.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\depots\PieceJointeRepository.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\services\WhatsAppNotificationService.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\dto\UtilisateursDtos.java
+C:\Plateforme Portail Client\Documentation - Plateforme Support\Version 1.0\Code\backend\src\main\java\com\nrstudio\portail\config\CrmDataSourceConfig.java

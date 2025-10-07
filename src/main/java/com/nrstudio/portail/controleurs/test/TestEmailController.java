@@ -11,6 +11,10 @@ public class TestEmailController {
     @Autowired
     private EmailNotificationService emailService;
 
+    @GetMapping("/test")
+    public String test() {
+        return "✅ Contrôleur WhatsApp fonctionnel! " + java.time.LocalDateTime.now();
+    }
     @PostMapping("/ticket-cree")
     public String testEmailTicketCree() {
         emailService.envoyerNotificationTicketCree(
