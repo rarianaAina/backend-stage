@@ -1,95 +1,91 @@
-# ================================
+﻿# ================================
 # Java/Spring Boot
 # ================================
 
-# Fichiers de compilation
+# 
+Fichiers de compilation
+
 *.class
+
 *.jar
+
 *.war
+
 *.ear
+
 *.zip
+
 *.tar.gz
 
+
 # Dossiers de build
-target/
+target
+/
 build/
 out/
 bin/
 
+
 # Fichiers de logs
+
 *.log
 logs/
 
+
 # Fichiers de configuration sensibles (CRITIQUE)
+
 application.properties
+
 application-*.properties
+
 *.yml
+
 *.yaml
+
 !application.properties.template
 
+
 # Fichiers d'environnement
+
 .env
+
 .env.local
+
 .env.production
+
 .env.development
+
 
 # ================================
 # IDE
 # ================================
 
-# IntelliJ IDEA
+# 
+IntelliJ IDEA
+
 .idea/
+
 *.iml
+
 *.iws
+
 *.ipr
+
 *.ids
+
 *.orig
 
+
 # Eclipse
+
 .settings/
+
 .classpath
+
 .project
+
 .metadata
 
+
 # VS Code
-.vscode/
 
-# ================================
-# Système
-# ================================
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# ================================
-# Base de données (si applicable)
-# ================================
-
-# H2 Database
-*.db
-*.trace.db
-
-# SQLite
-*.sqlite
-*.db.lock
-
-# ================================
-# Documentation générée
-# ================================
-
-# JavaDoc
-apidocs/
-
-# ================================
-# Node.js (si vous en avez)
-# ================================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
