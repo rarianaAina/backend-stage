@@ -145,7 +145,7 @@ public class CrmInterventionSyncService {
   private String mapStatutIdToCrmString(Integer statutId) {
     if (statutId == null) return "Scheduled";
     switch (statutId) {
-      case 4: return "Completed";
+      case 4: return "Completedd";
       case 5: return "Cancelled";
       case 2: return "Confirmed";
       default: return "Scheduled";
