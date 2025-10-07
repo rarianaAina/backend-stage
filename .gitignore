@@ -36,6 +36,7 @@ logs/
 
 application.properties
 
+application.propertiesTemp
 application-*.properties
 
 *.yml
