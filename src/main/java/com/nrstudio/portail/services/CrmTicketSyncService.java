@@ -36,9 +36,9 @@ public class CrmTicketSyncService {
   public void importerDepuisCrm() {
     final String sql =
       "SELECT Case_CaseId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status, " +
-      "       Case_Product, Case_PrimaryCompanyId, Case_Opened, Case_Closed, Case_CustomerRef, " +
+      "       Case_ProductId, Case_PrimaryCompanyId, Case_Opened, Case_Closed, Case_CustomerRef, " +
       "       ISNULL(Case_Deleted,0) AS Case_Deleted " +
-      "FROM dbo.Cases";
+      "FROM dbo.Cases WHERE ISNULL(Case_Deleted,0) = 0";
 
     List<Map<String,Object>> rows = crmJdbc.queryForList(sql);
 
@@ -53,7 +53,7 @@ public class CrmTicketSyncService {
       String description = Objects.toString(r.get("Case_ProblemNote"), null);
       String prioriteStr = Objects.toString(r.get("Case_Priority"), null);
       String statutStr   = Objects.toString(r.get("Case_Status"), null);
-      String produitStr  = Objects.toString(r.get("Case_Product"), null);
+      Integer produitId  = toInt(r.get("Case_ProductId"));
       Integer compId     = toInt(r.get("Case_PrimaryCompanyId"));
       String ref         = Objects.toString(r.get("Case_CustomerRef"), null);
 
@@ -69,7 +69,7 @@ public class CrmTicketSyncService {
       Ticket t = new Ticket();
       t.setReference(ref != null && !ref.isEmpty() ? ref : "CRM-" + caseId);
       t.setCompanyId(companyIdPortail);
-      t.setProduitId(mapProduitCrmStringToId(produitStr));
+      t.setProduitId(mapProduitIdToId(produitId));
       t.setTypeTicketId(mapTypeByHeuristique(titre, description));
 
       t.setPrioriteTicketId(mapPrioriteCrmStringToId(prioriteStr));
@@ -135,8 +135,10 @@ public class CrmTicketSyncService {
     return 1;
   }
 
-  private Integer mapProduitCrmStringToId(String s) {
-    return null; // TODO : lookup via table produit
+  private Integer mapProduitIdToId(Integer produitIdCrm) {
+    if (produitIdCrm == null) return null;
+    // TODO : lookup dans table produit par id_externe_crm
+    return null;
   }
 
   private Integer mapTypeByHeuristique(String titre, String desc) {

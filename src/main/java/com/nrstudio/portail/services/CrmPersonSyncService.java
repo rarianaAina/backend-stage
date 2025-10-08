@@ -35,10 +35,10 @@ public class CrmPersonSyncService {
   @Transactional
   public void synchroniserPersons() {
     final String sql =
-      "SELECT Pers_PersonId, Pers_FirstName, Pers_LastName, Pers_CompanyId, " +
-      "       Pers_EmailAddress, Pers_PhoneNumber, ISNULL(Pers_Deleted,0) AS Pers_Deleted " +
+      "SELECT Pers_PersonId, Pers_FirstName, Pers_LastName, Pers_CompanyId, Pers_Title, " +
+      "       ISNULL(Pers_Deleted,0) AS Pers_Deleted " +
       "FROM dbo.Person " +
-      "WHERE Pers_CompanyId IS NOT NULL";
+      "WHERE Pers_CompanyId IS NOT NULL AND ISNULL(Pers_Deleted,0) = 0";
 
     List<Map<String,Object>> rows = crmJdbc.queryForList(sql);
 
@@ -61,16 +61,19 @@ public class CrmPersonSyncService {
 
       String prenom = Objects.toString(r.get("Pers_FirstName"), "");
       String nom = Objects.toString(r.get("Pers_LastName"), "");
-      String email = Objects.toString(r.get("Pers_EmailAddress"), null);
-      String telephone = Objects.toString(r.get("Pers_PhoneNumber"), null);
+      String fonction = Objects.toString(r.get("Pers_Title"), null);
+      String email = null;
+      String telephone = null;
 
       Client client = new Client();
       client.setCompanyId(company.getId());
       client.setIdExterneCrm(idExterneCrm);
       client.setNom(nom);
       client.setPrenom(prenom);
+      client.setFonction(fonction);
       client.setEmail(email);
       client.setTelephone(telephone);
+      client.setWhatsappNumero(null);
       client.setPrincipal(false);
       client.setActif(true);
       client.setDateCreation(LocalDateTime.now());
