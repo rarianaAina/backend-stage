@@ -2,8 +2,10 @@ package com.nrstudio.portail.services;
 
 import com.nrstudio.portail.depots.CompanyRepository;
 import com.nrstudio.portail.depots.TicketRepository;
+import com.nrstudio.portail.depots.UtilisateurRepository;
 import com.nrstudio.portail.domaine.Company;
 import com.nrstudio.portail.domaine.Ticket;
+import com.nrstudio.portail.domaine.Utilisateur;
 import com.nrstudio.portail.dto.TicketCreationRequete;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,17 +23,20 @@ public class TicketService {
   private final EmailNotificationService emailService;
   private final WhatsAppNotificationService whatsAppService;
   private final CompanyRepository companies;
+  private final UtilisateurRepository utilisateurs;
 
   public TicketService(TicketRepository tickets,
                        @Qualifier("crmJdbc") JdbcTemplate crmJdbc,
                        EmailNotificationService emailService,
                        WhatsAppNotificationService whatsAppService,
-                       CompanyRepository companies) {
+                       CompanyRepository companies,
+                       UtilisateurRepository utilisateurs) {
     this.tickets = tickets;
     this.crmJdbc = crmJdbc;
     this.emailService = emailService;
     this.whatsAppService = whatsAppService;
     this.companies = companies;
+    this.utilisateurs = utilisateurs;
   }
 
   @Transactional
@@ -125,9 +130,9 @@ public class TicketService {
   }
 
   @Transactional
-  public List<Ticket> listerTicketsClient(Integer clientId) {
+  public List<Ticket> listerTicketsCompany(Integer companyId) {
     return tickets.findAll().stream()
-      .filter(ticket -> ticket.getClientId().equals(clientId))
+      .filter(ticket -> ticket.getCompanyId().equals(companyId))
       .toList();
   }
 

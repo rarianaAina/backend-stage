@@ -80,7 +80,7 @@ public class CrmTicketSyncService {
       t.setRaison(null);
       t.setPolitiqueAcceptee(true);
 
-      t.setCreeParUtilisateurId(clientIdPortail);
+      t.setCreeParUtilisateurId(1);
       t.setAffecteAUtilisateurId(null);
 
       t.setDateCreation(opened != null ? opened : LocalDateTime.now());

@@ -32,8 +32,8 @@ public class ProduitControleur {
     return repo.findById(id).orElseThrow();
   }
 
-  @GetMapping("/client/{clientId}")
-  public List<Produit> listerParClient(@PathVariable("clientId") Integer clientId) {
+  @GetMapping("/company/{companyId}")
+  public List<Produit> listerParCompany(@PathVariable("companyId") Integer companyId) {
     return repo.findByActif(true);
   }
 }

@@ -166,7 +166,7 @@ public class InterventionService {
           " VALUES (?,?,?, ?,?, 60, 'Scheduled', ?,?, GETDATE(), 0); " +
           " SELECT CAST(SCOPE_IDENTITY() AS INT);",
           Integer.class,
-          ticket.getClientId(), null, ticket.getIdExterneCrm(),
+          ticket.getCompanyId(), null, ticket.getIdExterneCrm(),
           "Intervention - " + ticket.getReference(),
           intervention.getDateIntervention(),
           intervention.getTypeIntervention(),

@@ -101,7 +101,7 @@ public class CrmInterventionSyncService {
           " VALUES (?,?, ?,?, 60, ?, ?,?, GETDATE(), 0); " +
           " SELECT CAST(SCOPE_IDENTITY() AS INT);",
           Integer.class,
-          ticket.getClientId(),
+          ticket.getCompanyId(),
           ticket.getIdExterneCrm(),
           "Intervention - " + ticket.getReference(),
           intervention.getDateIntervention(),
