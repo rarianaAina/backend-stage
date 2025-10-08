@@ -58,12 +58,6 @@ CREATE TABLE dbo.statut_intervention (
     ordre_affichage  INT NOT NULL DEFAULT(0)
 );
 
-CREATE TABLE dbo.modalite_intervention (
-    id               INT IDENTITY(1,1) PRIMARY KEY,
-    code             VARCHAR(50) NOT NULL UNIQUE,      -- SITE, DISTANCE
-    libelle          NVARCHAR(150) NOT NULL
-);
-
 CREATE TABLE dbo.type_interaction (
     id               INT IDENTITY(1,1) PRIMARY KEY,
     code             VARCHAR(50) NOT NULL UNIQUE,      -- MESSAGE, SYSTEME, RELANCE
@@ -186,6 +180,7 @@ CREATE TABLE dbo.contact_societe (
 ========================================================= */
 CREATE TABLE dbo.ticket (
     id                      INT IDENTITY(1,1) PRIMARY KEY,
+    id_externe_crm          INT NULL,                    -- clé externe Sage CRM (Case_CaseId)
     reference               VARCHAR(50) NOT NULL UNIQUE, -- ex: TCK-2025-000123 (generer cote backend)
     company_id              INT NOT NULL,
     produit_id              INT NULL,                    -- si rattachement a un produit
@@ -249,57 +244,28 @@ CREATE TABLE dbo.ticket_assignation (
 ========================================================= */
 CREATE TABLE dbo.intervention (
     id                          INT IDENTITY(1,1) PRIMARY KEY,
+    id_externe_crm              INT NULL,                    -- clé externe Sage CRM (inte_INTERVENTIONid)
     ticket_id                   INT NOT NULL,
-    statut_intervention_id      INT NOT NULL,
-    modalite_intervention_id    INT NOT NULL,       -- SITE / DISTANCE
-    motif                       NVARCHAR(500) NULL,
-    date_prevue                 DATETIME2(0) NULL,
+    reference                   VARCHAR(50) NOT NULL,        -- ex: INT-2025-000123
+    raison                      NVARCHAR(MAX) NULL,
+    date_intervention           DATETIME2(0) NOT NULL,       -- date prévue/planifiée
     date_proposee_client        DATETIME2(0) NULL,
-    date_proposee_consultant    DATETIME2(0) NULL,
-    date_validee                DATETIME2(0) NULL,  -- date retenue commune
-    date_debut_reel             DATETIME2(0) NULL,
-    date_fin_reelle             DATETIME2(0) NULL,
+    type_intervention           VARCHAR(50) NULL,
+    statut_intervention_id      INT NOT NULL,
     cree_par_utilisateur_id     INT NOT NULL,
-    validee_par_utilisateur_id  INT NULL,
     date_creation               DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
     date_mise_a_jour            DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+    date_cloture                DATETIME2(0) NULL,
+    cloture_par_utilisateur_id  INT NULL,
+    fiche_intervention          NVARCHAR(MAX) NULL,
+    validee_par_client          BIT NULL,
     CONSTRAINT FK_inter_ticket       FOREIGN KEY (ticket_id)                REFERENCES dbo.ticket(id),
     CONSTRAINT FK_inter_statut       FOREIGN KEY (statut_intervention_id)   REFERENCES dbo.statut_intervention(id),
-    CONSTRAINT FK_inter_modalite     FOREIGN KEY (modalite_intervention_id) REFERENCES dbo.modalite_intervention(id),
     CONSTRAINT FK_inter_cree_par     FOREIGN KEY (cree_par_utilisateur_id)  REFERENCES dbo.utilisateur(id),
-    CONSTRAINT FK_inter_validee_par  FOREIGN KEY (validee_par_utilisateur_id) REFERENCES dbo.utilisateur(id)
+    CONSTRAINT FK_inter_cloture_par  FOREIGN KEY (cloture_par_utilisateur_id) REFERENCES dbo.utilisateur(id)
 );
 
 CREATE INDEX IX_intervention_ticket_statut ON dbo.intervention(ticket_id, statut_intervention_id);
-
-/* Propositions de dates (historique des allers‑retours) */
-CREATE TABLE dbo.proposition_intervention (
-    id                          INT IDENTITY(1,1) PRIMARY KEY,
-    intervention_id             INT NOT NULL,
-    propose_par_role            VARCHAR(20) NOT NULL CHECK (propose_par_role IN ('CLIENT','CONSULTANT')),
-    propose_par_utilisateur_id  INT NOT NULL,
-    date_proposee               DATETIME2(0) NOT NULL,
-    commentaire                 NVARCHAR(500) NULL,
-    statut                      VARCHAR(20) NOT NULL CHECK (statut IN ('PROPOSEE','VALIDEE','REFUSEE')),
-    date_statut                 DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
-    CONSTRAINT FK_prop_intervention FOREIGN KEY (intervention_id) REFERENCES dbo.intervention(id),
-    CONSTRAINT FK_prop_user         FOREIGN KEY (propose_par_utilisateur_id) REFERENCES dbo.utilisateur(id)
-);
-
-/* Fiche d'intervention envoyee au client pour validation */
-CREATE TABLE dbo.fiche_intervention (
-    id                          INT IDENTITY(1,1) PRIMARY KEY,
-    intervention_id             INT NOT NULL UNIQUE,
-    resume                      NVARCHAR(1000) NULL,
-    travail_effectue            NVARCHAR(MAX) NULL,
-    duree_minutes               INT NULL CHECK (duree_minutes IS NULL OR duree_minutes >= 0),
-    statut_validation           VARCHAR(30) NOT NULL DEFAULT('ENVOYEE') CHECK (statut_validation IN ('ENVOYEE','VALIDEE_CLIENT','REFUSEE_CLIENT')),
-    validee_par_client_utilisateur_id INT NULL,
-    date_validation             DATETIME2(0) NULL,
-    signature_client_url        NVARCHAR(500) NULL,
-    CONSTRAINT FK_fiche_intervention FOREIGN KEY (intervention_id) REFERENCES dbo.intervention(id),
-    CONSTRAINT FK_fiche_validee_par   FOREIGN KEY (validee_par_client_utilisateur_id) REFERENCES dbo.utilisateur(id)
-);
 
 /* =========================================================
    Interactions & PJ
