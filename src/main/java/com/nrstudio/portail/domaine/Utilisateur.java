@@ -29,4 +29,16 @@ public class Utilisateur {
 
   @Column(name="date_mise_a_jour")
   private OffsetDateTime dateMiseAJour;
+
+  @Column(name="type_compte", length=50)
+  private String typeCompte;
+
+  @Column(name="company_id")
+  private Integer companyId;
+
+  @Column(name="company_nom", length=255)
+  private String companyNom;
+
+  @Column(name="role", length=50)
+  private String role;
 }

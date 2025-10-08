@@ -1,7 +1,9 @@
 package com.nrstudio.portail.services;
 
 import com.nrstudio.portail.depots.TicketRepository;
+import com.nrstudio.portail.depots.UtilisateurRepository;
 import com.nrstudio.portail.domaine.Ticket;
+import com.nrstudio.portail.domaine.Utilisateur;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,11 +21,14 @@ public class CrmTicketSyncService {
 
   private final JdbcTemplate crmJdbc;
   private final TicketRepository tickets;
+  private final UtilisateurRepository utilisateurs;
 
   public CrmTicketSyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
-                              TicketRepository tickets) {
+                              TicketRepository tickets,
+                              UtilisateurRepository utilisateurs) {
     this.crmJdbc = crmJdbc;
     this.tickets = tickets;
+    this.utilisateurs = utilisateurs;
   }
 
   @Scheduled(cron = "0 */30 * * * *")
@@ -56,22 +61,26 @@ public class CrmTicketSyncService {
       LocalDateTime opened = toLdt(r.get("Case_Opened"));
       LocalDateTime closed = toLdt(r.get("Case_Closed"));
 
+      Integer clientIdPortail = mapCompanyIdToClientId(compId);
+      if (clientIdPortail == null) {
+        continue;
+      }
+
       Ticket t = new Ticket();
       t.setReference(ref != null && !ref.isEmpty() ? ref : "CRM-" + caseId);
-      t.setClientId(compId != null ? compId : 0); // à mapper si besoin
-      t.setProduitId(mapProduitCrmStringToId(produitStr)); // TODO
-      t.setTypeTicketId(mapTypeByHeuristique(titre, description)); // TODO
+      t.setClientId(clientIdPortail);
+      t.setProduitId(mapProduitCrmStringToId(produitStr));
+      t.setTypeTicketId(mapTypeByHeuristique(titre, description));
 
-      t.setPrioriteTicketId(mapPrioriteCrmStringToId(prioriteStr)); // TODO
-      t.setStatutTicketId(mapStatutCrmStringToId(statutStr));       // TODO
+      t.setPrioriteTicketId(mapPrioriteCrmStringToId(prioriteStr));
+      t.setStatutTicketId(mapStatutCrmStringToId(statutStr));
 
       t.setTitre(titre != null ? titre : "Ticket CRM " + caseId);
       t.setDescription(description);
       t.setRaison(null);
-      t.setPolitiqueAcceptee(true); // import CRM → on considère ok
+      t.setPolitiqueAcceptee(true);
 
-      // à défaut d’auteur, on met 0 (à mapper si tu as un user technique)
-      t.setCreeParUtilisateurId(1);
+      t.setCreeParUtilisateurId(clientIdPortail);
       t.setAffecteAUtilisateurId(null);
 
       t.setDateCreation(opened != null ? opened : LocalDateTime.now());
@@ -131,6 +140,22 @@ public class CrmTicketSyncService {
   }
 
   private Integer mapTypeByHeuristique(String titre, String desc) {
-    return 1; // TODO : par défaut, ou applique des règles simples
+    return 1;
+  }
+
+  private Integer mapCompanyIdToClientId(Integer companyId) {
+    if (companyId == null) return null;
+    try {
+      List<Utilisateur> utilisateursCompany = utilisateurs.findAll().stream()
+        .filter(u -> companyId.equals(u.getCompanyId()))
+        .toList();
+
+      if (!utilisateursCompany.isEmpty()) {
+        return utilisateursCompany.get(0).getId();
+      }
+      return null;
+    } catch (Exception e) {
+      return null;
+    }
   }
 }
