@@ -37,9 +37,9 @@ public class TicketControleur {
     return service.changerStatut(id, nouveauStatutId, utilisateurId);
   }
 
-  @GetMapping("/client/{clientId}")
-  public List<Ticket> listerParClient(@PathVariable("clientId") Integer clientId) {
-    return service.listerTicketsClient(clientId);
+  @GetMapping("/company/{companyId}")
+  public List<Ticket> listerParCompany(@PathVariable("companyId") Integer companyId) {
+    return service.listerTicketsCompany(companyId);
   }
 
   @GetMapping("/consultant/{consultantId}")
