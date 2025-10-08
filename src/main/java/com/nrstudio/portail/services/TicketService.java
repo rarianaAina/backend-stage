@@ -1,8 +1,8 @@
 package com.nrstudio.portail.services;
 
-import com.nrstudio.portail.depots.ClientRepository;
+import com.nrstudio.portail.depots.CompanyRepository;
 import com.nrstudio.portail.depots.TicketRepository;
-import com.nrstudio.portail.domaine.Client;
+import com.nrstudio.portail.domaine.Company;
 import com.nrstudio.portail.domaine.Ticket;
 import com.nrstudio.portail.dto.TicketCreationRequete;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,18 +20,18 @@ public class TicketService {
   private final JdbcTemplate crmJdbc;
   private final EmailNotificationService emailService;
   private final WhatsAppNotificationService whatsAppService;
-  private final ClientRepository clients;
+  private final CompanyRepository companies;
 
   public TicketService(TicketRepository tickets,
                        @Qualifier("crmJdbc") JdbcTemplate crmJdbc,
                        EmailNotificationService emailService,
                        WhatsAppNotificationService whatsAppService,
-                       ClientRepository clients) {
+                       CompanyRepository companies) {
     this.tickets = tickets;
     this.crmJdbc = crmJdbc;
     this.emailService = emailService;
     this.whatsAppService = whatsAppService;
-    this.clients = clients;
+    this.companies = companies;
   }
 
   @Transactional
@@ -43,7 +43,7 @@ public class TicketService {
 
     // 1) Créer dans PORTAIL_CLIENT
     Ticket t = new Ticket();
-    t.setClientId(r.getClientId());
+    t.setCompanyId(r.getCompanyId());
     t.setProduitId(r.getProduitId());
     t.setTypeTicketId(r.getTypeTicketId());
     t.setPrioriteTicketId(r.getPrioriteTicketId());
@@ -68,8 +68,8 @@ public class TicketService {
     String caseStatus   = mapStatutIdToCrmString(t.getStatutTicketId());     // TODO: adapter
     String caseProduct  = mapProduitIdToCrmString(t.getProduitId());         // TODO: adapter
 
-    // Company côté CRM si tu as un mapping clientId -> CompanyId, mets-le ici
-    Integer crmCompanyId = mapClientIdToCrmCompanyId(t.getClientId());
+    // Company côté CRM
+    Integer crmCompanyId = mapCompanyIdToCrmCompanyId(t.getCompanyId());
 
     Integer caseId = crmJdbc.queryForObject(
       "INSERT INTO dbo.Cases " +
@@ -244,11 +244,11 @@ public class TicketService {
     return null; // facultatif
   }
 
-  private Integer mapClientIdToCrmCompanyId(Integer clientId) {
+  private Integer mapCompanyIdToCrmCompanyId(Integer companyId) {
     try {
-      Client client = clients.findById(clientId).orElse(null);
-      if (client != null && client.getIdExterneCrm() != null) {
-        return Integer.valueOf(client.getIdExterneCrm());
+      Company company = companies.findById(companyId).orElse(null);
+      if (company != null && company.getIdExterneCrm() != null) {
+        return Integer.valueOf(company.getIdExterneCrm());
       }
       return null;
     } catch (Exception e) {

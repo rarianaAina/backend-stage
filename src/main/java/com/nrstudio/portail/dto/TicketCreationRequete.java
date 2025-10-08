@@ -1,7 +1,7 @@
 package com.nrstudio.portail.dto;
 
 public class TicketCreationRequete {
-    private Integer clientId;
+    private Integer companyId;
     private Integer produitId;           // nullable
     private Integer typeTicketId;
     private Integer prioriteTicketId;
@@ -15,12 +15,12 @@ public class TicketCreationRequete {
 
     // Getters et Setters
 
-    public Integer getClientId() {
-        return clientId;
+    public Integer getCompanyId() {
+        return companyId;
     }
 
-    public void setClientId(Integer clientId) {
-        this.clientId = clientId;
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public Integer getProduitId() {

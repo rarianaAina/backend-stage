@@ -1,9 +1,9 @@
 package com.nrstudio.portail.services;
 
 import com.nrstudio.portail.depots.ClientRepository;
-import com.nrstudio.portail.depots.UtilisateurRepository;
+import com.nrstudio.portail.depots.CompanyRepository;
 import com.nrstudio.portail.domaine.Client;
-import com.nrstudio.portail.domaine.Utilisateur;
+import com.nrstudio.portail.domaine.Company;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,21 +15,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 
 @Service
 public class CrmPersonSyncService {
 
   private final JdbcTemplate crmJdbc;
-  private final UtilisateurRepository utilisateurs;
   private final ClientRepository clients;
+  private final CompanyRepository companies;
 
   public CrmPersonSyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
-                              UtilisateurRepository utilisateurs,
-                              ClientRepository clients) {
+                              ClientRepository clients,
+                              CompanyRepository companies) {
     this.crmJdbc = crmJdbc;
-    this.utilisateurs = utilisateurs;
     this.clients = clients;
+    this.companies = companies;
   }
 
   @Scheduled(cron = "0 10 2 * * *")
@@ -49,14 +48,14 @@ public class CrmPersonSyncService {
       if (toInt(r.get("Pers_Deleted")) == 1) continue;
 
       String idExterneCrm = "PERSON-" + personId;
-      if (utilisateurs.findByIdExterneCrm(idExterneCrm).isPresent()) continue;
+      if (clients.findByIdExterneCrm(idExterneCrm).isPresent()) continue;
 
       Integer companyId = toInt(r.get("Pers_CompanyId"));
       String companyIdCrm = String.valueOf(companyId);
 
-      Client client = clients.findByIdExterneCrm(companyIdCrm).orElse(null);
-      if (client == null) {
-        System.out.println("Client CRM " + companyId + " non trouvé pour Person " + personId);
+      Company company = companies.findByIdExterneCrm(companyIdCrm).orElse(null);
+      if (company == null) {
+        System.out.println("Company CRM " + companyId + " non trouvée pour Person " + personId);
         continue;
       }
 
@@ -65,40 +64,22 @@ public class CrmPersonSyncService {
       String email = Objects.toString(r.get("Pers_EmailAddress"), null);
       String telephone = Objects.toString(r.get("Pers_PhoneNumber"), null);
 
-      String identifiant = genererIdentifiant(email, personId);
+      Client client = new Client();
+      client.setCompanyId(company.getId());
+      client.setIdExterneCrm(idExterneCrm);
+      client.setNom(nom);
+      client.setPrenom(prenom);
+      client.setEmail(email);
+      client.setTelephone(telephone);
+      client.setPrincipal(false);
+      client.setActif(true);
+      client.setDateCreation(LocalDateTime.now());
+      client.setDateMiseAJour(LocalDateTime.now());
 
-      Utilisateur user = new Utilisateur();
-      user.setIdentifiant(identifiant);
-      user.setNom(nom);
-      user.setPrenom(prenom);
-      user.setEmail(email);
-      user.setTelephone(telephone);
-      user.setActif(true);
-      user.setIdExterneCrm(idExterneCrm);
-      user.setDateCreation(LocalDateTime.now());
-      user.setDateMiseAJour(LocalDateTime.now());
+      clients.save(client);
 
-      String motDePasseTemporaire = genererMotDePasseTemporaire();
-      user.setMotDePasseHash(BCrypt.hashpw(motDePasseTemporaire, BCrypt.gensalt()).getBytes());
-
-      utilisateurs.save(user);
-
-      System.out.println("Utilisateur client créé: " + identifiant + " (Client: " + client.getRaisonSociale() + ") / MDP temporaire: " + motDePasseTemporaire);
+      System.out.println("Client créé: " + prenom + " " + nom + " (Company: " + company.getNom() + ")");
     }
-  }
-
-  private String genererIdentifiant(String email, Integer personId) {
-    if (email != null && !email.trim().isEmpty()) {
-      String identifiantBase = email.split("@")[0].toLowerCase().replaceAll("[^a-z0-9]", "");
-      if (utilisateurs.findByIdentifiant(identifiantBase).isEmpty()) {
-        return identifiantBase;
-      }
-    }
-    return "person_" + personId + "_" + UUID.randomUUID().toString().substring(0, 8);
-  }
-
-  private String genererMotDePasseTemporaire() {
-    return "Welcome" + UUID.randomUUID().toString().substring(0, 8) + "!";
   }
 
   private Integer toInt(Object o) {

@@ -1,8 +1,8 @@
 package com.nrstudio.portail.services;
 
-import com.nrstudio.portail.depots.ClientRepository;
+import com.nrstudio.portail.depots.CompanyRepository;
 import com.nrstudio.portail.depots.TicketRepository;
-import com.nrstudio.portail.domaine.Client;
+import com.nrstudio.portail.domaine.Company;
 import com.nrstudio.portail.domaine.Ticket;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,14 +21,14 @@ public class CrmTicketSyncService {
 
   private final JdbcTemplate crmJdbc;
   private final TicketRepository tickets;
-  private final ClientRepository clients;
+  private final CompanyRepository companies;
 
   public CrmTicketSyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
                               TicketRepository tickets,
-                              ClientRepository clients) {
+                              CompanyRepository companies) {
     this.crmJdbc = crmJdbc;
     this.tickets = tickets;
-    this.clients = clients;
+    this.companies = companies;
   }
 
   @Scheduled(cron = "0 */30 * * * *")
@@ -61,14 +61,14 @@ public class CrmTicketSyncService {
       LocalDateTime opened = toLdt(r.get("Case_Opened"));
       LocalDateTime closed = toLdt(r.get("Case_Closed"));
 
-      Integer clientIdPortail = mapCompanyIdToClientId(compId);
-      if (clientIdPortail == null) {
+      Integer companyIdPortail = mapCompanyIdToCompanyId(compId);
+      if (companyIdPortail == null) {
         continue;
       }
 
       Ticket t = new Ticket();
       t.setReference(ref != null && !ref.isEmpty() ? ref : "CRM-" + caseId);
-      t.setClientId(clientIdPortail);
+      t.setCompanyId(companyIdPortail);
       t.setProduitId(mapProduitCrmStringToId(produitStr));
       t.setTypeTicketId(mapTypeByHeuristique(titre, description));
 
@@ -143,13 +143,13 @@ public class CrmTicketSyncService {
     return 1;
   }
 
-  private Integer mapCompanyIdToClientId(Integer companyId) {
+  private Integer mapCompanyIdToCompanyId(Integer companyId) {
     if (companyId == null) return null;
     try {
       String idExterneCrm = String.valueOf(companyId);
-      Client client = clients.findByIdExterneCrm(idExterneCrm).orElse(null);
-      if (client != null) {
-        return client.getId();
+      Company company = companies.findByIdExterneCrm(idExterneCrm).orElse(null);
+      if (company != null) {
+        return company.getId();
       }
       return null;
     } catch (Exception e) {

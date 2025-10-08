@@ -6,32 +6,31 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "client", schema = "dbo")
+@Table(name = "company", schema = "dbo")
 @Getter
 @Setter
-public class Client {
+public class Company {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
 
-  @Column(name="company_id", nullable=false)
-  private Integer companyId;
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name="company_id", insertable=false, updatable=false)
-  private Company company;
-
   @Column(name="id_externe_crm", length=100)
   private String idExterneCrm;
 
-  @Column(nullable=false, length=150)
+  @Column(name="code_company", length=100)
+  private String codeCompany;
+
+  @Column(nullable=false, length=250)
   private String nom;
 
-  @Column(length=150)
-  private String prenom;
+  @Column(length=100)
+  private String nif;
 
-  @Column(length=320)
-  private String email;
+  @Column(length=100)
+  private String stat;
+
+  @Column(length=500)
+  private String adresse;
 
   @Column(length=50)
   private String telephone;
@@ -39,11 +38,8 @@ public class Client {
   @Column(name="whatsapp_numero", length=50)
   private String whatsappNumero;
 
-  @Column(length=150)
-  private String fonction;
-
-  @Column(nullable=false)
-  private boolean principal = false;
+  @Column(length=320)
+  private String email;
 
   @Column(nullable=false)
   private boolean actif = true;

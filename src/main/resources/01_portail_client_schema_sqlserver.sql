@@ -79,11 +79,11 @@ CREATE TABLE dbo.canal_interaction (
 /* =========================================================
    Donnees "metier" externes/mirror (optionnel selon intégration CRM)
 ========================================================= */
-CREATE TABLE dbo.client (
+CREATE TABLE dbo.company (
     id                      INT IDENTITY(1,1) PRIMARY KEY,
-    id_externe_crm          VARCHAR(100) NULL,         -- clé externe Sage CRM
-    code_client             VARCHAR(100) NULL,
-    raison_sociale          NVARCHAR(250) NOT NULL,
+    id_externe_crm          VARCHAR(100) NULL,         -- clé externe Sage CRM (Comp_CompanyId)
+    code_company            VARCHAR(100) NULL,
+    nom                     NVARCHAR(250) NOT NULL,
     nif                     VARCHAR(100) NULL,
     stat                    VARCHAR(100) NULL,
     adresse                 NVARCHAR(500) NULL,
@@ -93,6 +93,23 @@ CREATE TABLE dbo.client (
     actif                   BIT NOT NULL DEFAULT(1),
     date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
     date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME())
+);
+
+CREATE TABLE dbo.client (
+    id                      INT IDENTITY(1,1) PRIMARY KEY,
+    company_id              INT NOT NULL,              -- référence vers company
+    id_externe_crm          VARCHAR(100) NULL,         -- clé externe Sage CRM (Pers_PersonId)
+    nom                     NVARCHAR(150) NOT NULL,
+    prenom                  NVARCHAR(150) NULL,
+    email                   VARCHAR(320) NULL,
+    telephone               VARCHAR(50) NULL,
+    whatsapp_numero         VARCHAR(50) NULL,
+    fonction                NVARCHAR(150) NULL,
+    principal               BIT NOT NULL DEFAULT(0),
+    actif                   BIT NOT NULL DEFAULT(1),
+    date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+    date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+    CONSTRAINT FK_client_company FOREIGN KEY (company_id) REFERENCES dbo.company(id)
 );
 
 CREATE TABLE dbo.produit (
@@ -106,18 +123,18 @@ CREATE TABLE dbo.produit (
     date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME())
 );
 
-/* liaison N‑N pour gerer les produits possedes par chaque client (avec meta) */
-CREATE TABLE dbo.client_produit (
+/* liaison N‑N pour gerer les produits possedes par chaque company (avec meta) */
+CREATE TABLE dbo.company_produit (
     id                      INT IDENTITY(1,1) PRIMARY KEY,
-    client_id               INT NOT NULL,
+    company_id              INT NOT NULL,
     produit_id              INT NOT NULL,
     numero_serie            NVARCHAR(150) NULL,
     date_debut_contrat      DATE NULL,
     date_fin_contrat        DATE NULL,
     actif                   BIT NOT NULL DEFAULT(1),
-    CONSTRAINT UQ_client_produit UNIQUE (client_id, produit_id, numero_serie),
-    CONSTRAINT FK_client_produit_client  FOREIGN KEY (client_id)  REFERENCES dbo.client(id),
-    CONSTRAINT FK_client_produit_produit FOREIGN KEY (produit_id) REFERENCES dbo.produit(id)
+    CONSTRAINT UQ_company_produit UNIQUE (company_id, produit_id, numero_serie),
+    CONSTRAINT FK_company_produit_company  FOREIGN KEY (company_id)  REFERENCES dbo.company(id),
+    CONSTRAINT FK_company_produit_produit FOREIGN KEY (produit_id) REFERENCES dbo.produit(id)
 );
 
 /* =========================================================
@@ -143,22 +160,11 @@ CREATE TABLE dbo.utilisateur (
 CREATE TABLE dbo.utilisateur_role (
     utilisateur_id          INT NOT NULL,
     role_id                 INT NOT NULL,
-    client_id               INT NULL,         -- pour restreindre un utilisateur CLIENT a un client specifique
-    PRIMARY KEY (utilisateur_id, role_id, ISNULL(client_id,0)),
+    company_id              INT NULL,         -- pour restreindre un utilisateur CLIENT a une company specifique
+    PRIMARY KEY (utilisateur_id, role_id, ISNULL(company_id,0)),
     CONSTRAINT FK_utilisateur_role_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES dbo.utilisateur(id),
     CONSTRAINT FK_utilisateur_role_role        FOREIGN KEY (role_id)        REFERENCES dbo.role(id),
-    CONSTRAINT FK_utilisateur_role_client      FOREIGN KEY (client_id)      REFERENCES dbo.client(id)
-);
-
-CREATE TABLE dbo.client_contact (
-    id                      INT IDENTITY(1,1) PRIMARY KEY,
-    client_id               INT NOT NULL,
-    utilisateur_id          INT NOT NULL,         -- utilisateur côté client
-    fonction                NVARCHAR(150) NULL,
-    principal               BIT NOT NULL DEFAULT(0),
-    CONSTRAINT UQ_client_contact UNIQUE (client_id, utilisateur_id),
-    CONSTRAINT FK_client_contact_client      FOREIGN KEY (client_id)      REFERENCES dbo.client(id),
-    CONSTRAINT FK_client_contact_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES dbo.utilisateur(id)
+    CONSTRAINT FK_utilisateur_role_company     FOREIGN KEY (company_id)     REFERENCES dbo.company(id)
 );
 
 /* Contacts visibles pour le client (annuaire de la societe) */
@@ -181,7 +187,7 @@ CREATE TABLE dbo.contact_societe (
 CREATE TABLE dbo.ticket (
     id                      INT IDENTITY(1,1) PRIMARY KEY,
     reference               VARCHAR(50) NOT NULL UNIQUE, -- ex: TCK-2025-000123 (generer cote backend)
-    client_id               INT NOT NULL,
+    company_id              INT NOT NULL,
     produit_id              INT NULL,                    -- si rattachement a un produit
     type_ticket_id          INT NOT NULL,
     priorite_ticket_id      INT NOT NULL,
@@ -196,7 +202,7 @@ CREATE TABLE dbo.ticket (
     date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
     date_cloture            DATETIME2(0) NULL,
     cloture_par_utilisateur_id INT NULL,
-    CONSTRAINT FK_ticket_client            FOREIGN KEY (client_id)          REFERENCES dbo.client(id),
+    CONSTRAINT FK_ticket_company           FOREIGN KEY (company_id)          REFERENCES dbo.company(id),
     CONSTRAINT FK_ticket_produit           FOREIGN KEY (produit_id)         REFERENCES dbo.produit(id),
     CONSTRAINT FK_ticket_type              FOREIGN KEY (type_ticket_id)     REFERENCES dbo.type_ticket(id),
     CONSTRAINT FK_ticket_priorite          FOREIGN KEY (priorite_ticket_id) REFERENCES dbo.priorite_ticket(id),
@@ -206,7 +212,7 @@ CREATE TABLE dbo.ticket (
     CONSTRAINT FK_ticket_cloture_par       FOREIGN KEY (cloture_par_utilisateur_id) REFERENCES dbo.utilisateur(id)
 );
 
-CREATE INDEX IX_ticket_client_statut      ON dbo.ticket(client_id, statut_ticket_id);
+CREATE INDEX IX_ticket_company_statut      ON dbo.ticket(company_id, statut_ticket_id);
 CREATE INDEX IX_ticket_affecte_a          ON dbo.ticket(affecte_a_utilisateur_id, statut_ticket_id);
 CREATE INDEX IX_ticket_dates              ON dbo.ticket(date_creation, date_cloture);
 
