@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,12 +61,9 @@ public class CrmUsersSyncService {
       user.setEmail(email);
       user.setTelephone(telephone);
       user.setActif(true);
-      user.setTypeCompte("INTERNAL");
-      user.setCompanyId(null);
-      user.setCompanyNom("OPTIMADA");
-      user.setRole(role);
       user.setIdExterneCrm(idExterneCrm);
-      user.setDateMiseAJour(OffsetDateTime.now());
+      user.setDateCreation(LocalDateTime.now());
+      user.setDateMiseAJour(LocalDateTime.now());
 
       String motDePasseTemporaire = genererMotDePasseTemporaire();
       user.setMotDePasseHash(BCrypt.hashpw(motDePasseTemporaire, BCrypt.gensalt()).getBytes());

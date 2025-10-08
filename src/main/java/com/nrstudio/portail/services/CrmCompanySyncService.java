@@ -1,36 +1,36 @@
 package com.nrstudio.portail.services;
 
-import com.nrstudio.portail.depots.UtilisateurRepository;
-import com.nrstudio.portail.domaine.Utilisateur;
+import com.nrstudio.portail.depots.ClientRepository;
+import com.nrstudio.portail.domaine.Client;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 
 @Service
 public class CrmCompanySyncService {
 
   private final JdbcTemplate crmJdbc;
-  private final UtilisateurRepository utilisateurs;
+  private final ClientRepository clients;
 
   public CrmCompanySyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
-                               UtilisateurRepository utilisateurs) {
+                               ClientRepository clients) {
     this.crmJdbc = crmJdbc;
-    this.utilisateurs = utilisateurs;
+    this.clients = clients;
   }
 
   @Scheduled(cron = "0 0 2 * * *")
   @Transactional
   public void synchroniserCompanies() {
     final String sql =
-      "SELECT Comp_CompanyId, Comp_Name, Comp_Type, ISNULL(Comp_Deleted,0) AS Comp_Deleted " +
+      "SELECT Comp_CompanyId, Comp_Name, Comp_Type, Comp_PhoneNumber, Comp_EmailAddress, " +
+      "       ISNULL(Comp_Deleted,0) AS Comp_Deleted " +
       "FROM dbo.Company " +
       "WHERE Comp_Type = 'Customer'";
 
@@ -41,26 +41,31 @@ public class CrmCompanySyncService {
       if (companyId == null) continue;
       if (toInt(r.get("Comp_Deleted")) == 1) continue;
 
-      String idExterneCrm = "COMPANY-" + companyId;
-      if (utilisateurs.findByIdExterneCrm(idExterneCrm).isPresent()) continue;
+      String idExterneCrm = String.valueOf(companyId);
+      Client clientExistant = clients.findByIdExterneCrm(idExterneCrm).orElse(null);
 
-      String companyName = Objects.toString(r.get("Comp_Name"), "Société " + companyId);
+      String raisonSociale = Objects.toString(r.get("Comp_Name"), "Société " + companyId);
+      String telephone = Objects.toString(r.get("Comp_PhoneNumber"), null);
+      String email = Objects.toString(r.get("Comp_EmailAddress"), null);
 
-      Utilisateur companyUser = new Utilisateur();
-      companyUser.setIdentifiant("company_" + companyId + "_" + UUID.randomUUID().toString().substring(0, 8));
-      companyUser.setNom(companyName);
-      companyUser.setPrenom("");
-      companyUser.setEmail(null);
-      companyUser.setTelephone(null);
-      companyUser.setActif(true);
-      companyUser.setTypeCompte("COMPANY");
-      companyUser.setCompanyId(companyId);
-      companyUser.setCompanyNom(companyName);
-      companyUser.setRole("CLIENT");
-      companyUser.setIdExterneCrm(idExterneCrm);
-      companyUser.setDateMiseAJour(OffsetDateTime.now());
-
-      utilisateurs.save(companyUser);
+      if (clientExistant != null) {
+        clientExistant.setRaisonSociale(raisonSociale);
+        clientExistant.setTelephone(telephone);
+        clientExistant.setEmail(email);
+        clientExistant.setDateMiseAJour(LocalDateTime.now());
+        clients.save(clientExistant);
+      } else {
+        Client nouveauClient = new Client();
+        nouveauClient.setIdExterneCrm(idExterneCrm);
+        nouveauClient.setCodeClient("CLI-" + companyId);
+        nouveauClient.setRaisonSociale(raisonSociale);
+        nouveauClient.setTelephone(telephone);
+        nouveauClient.setEmail(email);
+        nouveauClient.setActif(true);
+        nouveauClient.setDateCreation(LocalDateTime.now());
+        nouveauClient.setDateMiseAJour(LocalDateTime.now());
+        clients.save(nouveauClient);
+      }
     }
   }
 
