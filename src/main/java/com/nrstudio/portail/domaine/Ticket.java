@@ -14,8 +14,8 @@ public class Ticket {
   @Column(length = 50, nullable = false)
   private String reference;
 
-  @Column(name = "client_id", nullable = false)
-  private Integer clientId;
+  @Column(name = "company_id", nullable = false)
+  private Integer companyId;
 
   @Column(name = "produit_id")
   private Integer produitId;
@@ -82,12 +82,12 @@ public class Ticket {
     this.reference = reference;
   }
 
-  public Integer getClientId() {
-    return clientId;
+  public Integer getCompanyId() {
+    return companyId;
   }
 
-  public void setClientId(Integer clientId) {
-    this.clientId = clientId;
+  public void setCompanyId(Integer companyId) {
+    this.companyId = companyId;
   }
 
   public Integer getProduitId() {

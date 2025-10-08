@@ -1,7 +1,7 @@
 package com.nrstudio.portail.services;
 
-import com.nrstudio.portail.depots.ClientRepository;
-import com.nrstudio.portail.domaine.Client;
+import com.nrstudio.portail.depots.CompanyRepository;
+import com.nrstudio.portail.domaine.Company;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,12 +17,12 @@ import java.util.Objects;
 public class CrmCompanySyncService {
 
   private final JdbcTemplate crmJdbc;
-  private final ClientRepository clients;
+  private final CompanyRepository companies;
 
   public CrmCompanySyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
-                               ClientRepository clients) {
+                               CompanyRepository companies) {
     this.crmJdbc = crmJdbc;
-    this.clients = clients;
+    this.companies = companies;
   }
 
   @Scheduled(cron = "0 0 2 * * *")
@@ -42,29 +42,29 @@ public class CrmCompanySyncService {
       if (toInt(r.get("Comp_Deleted")) == 1) continue;
 
       String idExterneCrm = String.valueOf(companyId);
-      Client clientExistant = clients.findByIdExterneCrm(idExterneCrm).orElse(null);
+      Company companyExistante = companies.findByIdExterneCrm(idExterneCrm).orElse(null);
 
-      String raisonSociale = Objects.toString(r.get("Comp_Name"), "Société " + companyId);
+      String nom = Objects.toString(r.get("Comp_Name"), "Société " + companyId);
       String telephone = Objects.toString(r.get("Comp_PhoneNumber"), null);
       String email = Objects.toString(r.get("Comp_EmailAddress"), null);
 
-      if (clientExistant != null) {
-        clientExistant.setRaisonSociale(raisonSociale);
-        clientExistant.setTelephone(telephone);
-        clientExistant.setEmail(email);
-        clientExistant.setDateMiseAJour(LocalDateTime.now());
-        clients.save(clientExistant);
+      if (companyExistante != null) {
+        companyExistante.setNom(nom);
+        companyExistante.setTelephone(telephone);
+        companyExistante.setEmail(email);
+        companyExistante.setDateMiseAJour(LocalDateTime.now());
+        companies.save(companyExistante);
       } else {
-        Client nouveauClient = new Client();
-        nouveauClient.setIdExterneCrm(idExterneCrm);
-        nouveauClient.setCodeClient("CLI-" + companyId);
-        nouveauClient.setRaisonSociale(raisonSociale);
-        nouveauClient.setTelephone(telephone);
-        nouveauClient.setEmail(email);
-        nouveauClient.setActif(true);
-        nouveauClient.setDateCreation(LocalDateTime.now());
-        nouveauClient.setDateMiseAJour(LocalDateTime.now());
-        clients.save(nouveauClient);
+        Company nouvelleCompany = new Company();
+        nouvelleCompany.setIdExterneCrm(idExterneCrm);
+        nouvelleCompany.setCodeCompany("COMP-" + companyId);
+        nouvelleCompany.setNom(nom);
+        nouvelleCompany.setTelephone(telephone);
+        nouvelleCompany.setEmail(email);
+        nouvelleCompany.setActif(true);
+        nouvelleCompany.setDateCreation(LocalDateTime.now());
+        nouvelleCompany.setDateMiseAJour(LocalDateTime.now());
+        companies.save(nouvelleCompany);
       }
     }
   }
