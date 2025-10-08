@@ -29,9 +29,9 @@ public class CrmProductSyncService {
   @Transactional
   public void synchroniserProduits() {
     final String sql =
-      "SELECT Prod_ProductId, Prod_Name, Prod_ProductFamilyId, " +
-      "       Prod_PRDescription, Prod_Code, ISNULL(Prod_Deleted,0) AS Prod_Deleted " +
-      "FROM dbo.NewProduct";
+      "SELECT Prod_ProductId, Prod_Name, Prod_Description, " +
+      "       ISNULL(Prod_Deleted,0) AS Prod_Deleted " +
+      "FROM dbo.Products WHERE ISNULL(Prod_Deleted,0) = 0";
 
     List<Map<String,Object>> rows = crmJdbc.queryForList(sql);
 
@@ -44,8 +44,8 @@ public class CrmProductSyncService {
       Produit produitExistant = produits.findByIdExterneCrm(idExterneCrm).orElse(null);
 
       String libelle = Objects.toString(r.get("Prod_Name"), "Produit " + produitId);
-      String description = Objects.toString(r.get("Prod_PRDescription"), null);
-      String codeProduit = Objects.toString(r.get("Prod_Code"), null);
+      String description = Objects.toString(r.get("Prod_Description"), null);
+      String codeProduit = null;
 
       if (produitExistant != null) {
         produitExistant.setLibelle(libelle);

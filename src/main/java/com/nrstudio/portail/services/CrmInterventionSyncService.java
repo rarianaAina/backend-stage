@@ -94,25 +94,22 @@ public class CrmInterventionSyncService {
         Ticket ticket = tickets.findById(intervention.getTicketId()).orElse(null);
         if (ticket == null || ticket.getIdExterneCrm() == null) continue;
 
-        Integer appointmentId = crmJdbc.queryForObject(
-          "INSERT INTO dbo.Appointments " +
-          " (Appt_CompanyId, Appt_OpportunityId, Appt_Subject, Appt_StartDateTime, " +
-          "  Appt_Duration, Appt_Status, Appt_Type, Appt_Notes, Appt_CreatedDate, Appt_Deleted) " +
-          " VALUES (?,?, ?,?, 60, ?, ?,?, GETDATE(), 0); " +
+        Integer interventionId = crmJdbc.queryForObject(
+          "INSERT INTO dbo.INTERVENTION " +
+          " (inte_companyid, inte_name, inte_date, inte_details, " +
+          "  inte_type_intervention, inte_CreatedDate, inte_Deleted) " +
+          " VALUES (?,?, ?,?, ?, GETDATE(), 0); " +
           " SELECT CAST(SCOPE_IDENTITY() AS INT);",
           Integer.class,
           ticket.getCompanyId(),
-          ticket.getIdExterneCrm(),
           "Intervention - " + ticket.getReference(),
           intervention.getDateIntervention(),
-          mapStatutIdToCrmString(intervention.getStatutInterventionId()),
-          intervention.getTypeIntervention(),
           intervention.getRaison(),
-          intervention.getDateCreation()
+          intervention.getTypeIntervention()
         );
 
-        if (appointmentId != null) {
-          intervention.setIdExterneCrm(appointmentId);
+        if (interventionId != null) {
+          intervention.setIdExterneCrm(interventionId);
           interventions.save(intervention);
         }
       } catch (Exception e) {

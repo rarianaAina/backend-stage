@@ -159,31 +159,32 @@ public class InterventionService {
   private void synchroniserAvecCrm(Intervention intervention, Ticket ticket) {
     try {
       if (intervention.getIdExterneCrm() == null) {
-        Integer appointmentId = crmJdbc.queryForObject(
-          "INSERT INTO dbo.Appointments " +
-          " (Appt_CompanyId, Appt_PersonId, Appt_OpportunityId, Appt_Subject, Appt_StartDateTime, " +
-          "  Appt_Duration, Appt_Status, Appt_Type, Appt_Notes, Appt_CreatedDate, Appt_Deleted) " +
-          " VALUES (?,?,?, ?,?, 60, 'Scheduled', ?,?, GETDATE(), 0); " +
+        Integer interventionId = crmJdbc.queryForObject(
+          "INSERT INTO dbo.INTERVENTION " +
+          " (inte_companyid, inte_interlocuteur, inte_name, inte_date, " +
+          "  inte_details, inte_type_intervention, inte_CreatedDate, inte_Deleted) " +
+          " VALUES (?,?, ?,?, ?,?, GETDATE(), 0); " +
           " SELECT CAST(SCOPE_IDENTITY() AS INT);",
           Integer.class,
-          ticket.getCompanyId(), null, ticket.getIdExterneCrm(),
+          ticket.getCompanyId(),
+          null,
           "Intervention - " + ticket.getReference(),
           intervention.getDateIntervention(),
-          intervention.getTypeIntervention(),
-          intervention.getRaison()
+          intervention.getRaison(),
+          intervention.getTypeIntervention()
         );
 
-        if (appointmentId != null) {
-          intervention.setIdExterneCrm(appointmentId);
+        if (interventionId != null) {
+          intervention.setIdExterneCrm(interventionId);
           interventions.save(intervention);
         }
       } else {
         crmJdbc.update(
-          "UPDATE dbo.Appointments SET Appt_StartDateTime = ?, Appt_Status = ?, Appt_Notes = ? " +
-          "WHERE Appt_AppointmentId = ?",
+          "UPDATE dbo.INTERVENTION SET inte_date = ?, inte_details = ?, inte_type_intervention = ? " +
+          "WHERE inte_INTERVENTIONid = ?",
           intervention.getDateIntervention(),
-          intervention.getStatutInterventionId() == 4 ? "Completed" : "Scheduled",
           intervention.getRaison(),
+          intervention.getTypeIntervention(),
           intervention.getIdExterneCrm()
         );
       }

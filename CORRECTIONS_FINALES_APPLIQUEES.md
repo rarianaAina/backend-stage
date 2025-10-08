@@ -1,282 +1,265 @@
-# Corrections Finales Appliquées - Cohérence Complète
+# ✅ CORRECTIONS FINALES BASÉES SUR LES STRUCTURES CRM SAGE
 
-## ✅ Corrections Appliquées
+## 📋 RÉSUMÉ DES MODIFICATIONS
 
-### 1. Entités Corrigées
+Toutes les corrections ont été appliquées suite à l'analyse approfondie des structures réelles du CRM Sage.
 
-#### Utilisateur ✅
+---
+
+## 🔧 1. CrmProductSyncService
+
+### ❌ AVANT (Incorrect)
 ```java
-@Entity
-@Table(name = "utilisateur", schema = "dbo")
-public class Utilisateur {
-  private Integer id;
-  private String idExterneCrm;        // VARCHAR(100)
-  private String identifiant;
-  private byte[] motDePasseHash;
-  private byte[] motDePasseSalt;      // ✅ Ajouté
-  private String nom;
-  private String prenom;
-  private String email;
-  private String telephone;
-  private String whatsappNumero;      // ✅ Ajouté
-  private boolean actif;
-  private LocalDateTime dateDerniereConnexion;  // ✅ Ajouté
-  private LocalDateTime dateCreation;
-  private LocalDateTime dateMiseAJour;
-}
+SELECT Prod_ProductId, Prod_Name, Prod_ProductFamilyId, 
+       Prod_PRDescription, Prod_Code
+FROM dbo.NewProduct
 ```
-- ✅ Supprimé : `typeCompte`, `companyId`, `companyNom`, `role`
-- ✅ Ces données sont gérées via les tables de relation
 
-#### Client ✅ (NOUVEAU)
+### ✅ APRÈS (Correct)
 ```java
-@Entity
-@Table(name = "client", schema = "dbo")
-public class Client {
-  private Integer id;
-  private String idExterneCrm;        // VARCHAR(100)
-  private String codeClient;
-  private String raisonSociale;
-  private String nif;
-  private String stat;
-  private String adresse;
-  private String telephone;
-  private String whatsappNumero;
-  private String email;
-  private boolean actif;
-  private LocalDateTime dateCreation;
-  private LocalDateTime dateMiseAJour;
-}
+SELECT Prod_ProductId, Prod_Name, Prod_Description,
+       ISNULL(Prod_Deleted,0) AS Prod_Deleted
+FROM dbo.Products 
+WHERE ISNULL(Prod_Deleted,0) = 0
 ```
-- ✅ Représente les sociétés clientes (Company du CRM)
-- ✅ Repository créé
 
-#### Produit ✅
+**Changements** :
+- ✅ `NewProduct` → `Products` (table correcte)
+- ✅ `Prod_PRDescription` → `Prod_Description` (champ correct)
+- ✅ Suppression de `Prod_Code` (n'existe pas dans Products)
+- ✅ Filtre des enregistrements supprimés
+
+---
+
+## 🔧 2. CrmTicketSyncService
+
+### ❌ AVANT (Incorrect)
 ```java
-@Entity
-@Table(name = "produit", schema = "dbo")
-public class Produit {
-  private Integer id;
-  private String idExterneCrm;        // VARCHAR(100) ✅
-  private String codeProduit;         // ✅ Ajouté
-  private String libelle;             // ✅ Renommé (était "nom")
-  private String description;
-  private boolean actif;
-  private LocalDateTime dateCreation;
-  private LocalDateTime dateMiseAJour;
-}
+SELECT Case_CaseId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status,
+       Case_Product, Case_PrimaryCompanyId, ...
+FROM dbo.Cases
+
+// Dans le code :
+String produitStr = Objects.toString(r.get("Case_Product"), null);
+t.setProduitId(mapProduitCrmStringToId(produitStr));
 ```
-- ✅ Supprimé : `reference`, `categorie`, `version`
-- ✅ Repository corrigé : `findByIdExterneCrm(String)`
 
-### 2. Services de Synchronisation Corrigés
-
-#### CrmCompanySyncService ✅
+### ✅ APRÈS (Correct)
 ```java
-Company (CRM) → Client (Portail)
-```
-- ✅ Synchronise vers la table **client**
-- ✅ Crée/met à jour les entités Client
-- ✅ `id_externe_crm` = String.valueOf(companyId)
-- ✅ Utilise ClientRepository
+SELECT Case_CaseId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status,
+       Case_ProductId, Case_PrimaryCompanyId, ...
+FROM dbo.Cases 
+WHERE ISNULL(Case_Deleted,0) = 0
 
-#### CrmPersonSyncService ✅
+// Dans le code :
+Integer produitId = toInt(r.get("Case_ProductId"));
+t.setProduitId(mapProduitIdToId(produitId));
+```
+
+**Changements** :
+- ✅ `Case_Product` (nvarchar) → `Case_ProductId` (int)
+- ✅ Méthode `mapProduitCrmStringToId()` → `mapProduitIdToId()`
+- ✅ Filtre des tickets supprimés
+
+---
+
+## 🔧 3. CrmPersonSyncService
+
+### ❌ AVANT (Incorrect)
 ```java
-Person (CRM) → Utilisateur (Portail)
+SELECT Pers_PersonId, Pers_FirstName, Pers_LastName, Pers_CompanyId,
+       Pers_EmailAddress, Pers_PhoneNumber, ...
+FROM dbo.Person
+WHERE Pers_CompanyId IS NOT NULL
 ```
-- ✅ Vérifie l'existence du Client avant de créer l'utilisateur
-- ✅ Crée les utilisateurs clients avec dates de création
-- ✅ Génère des mots de passe temporaires
-- ✅ Utilise ClientRepository et UtilisateurRepository
+**Problème** : `Pers_EmailAddress` et `Pers_PhoneNumber` n'existent PAS dans la table Person !
 
-#### CrmUsersSyncService ✅
+### ✅ APRÈS (Correct)
 ```java
-Users (CRM) → Utilisateur (Portail)
-```
-- ✅ Synchronise les utilisateurs internes (Consultants/Admin)
-- ✅ Détecte le rôle automatiquement (via UserSecurity)
-- ✅ Pas de lien avec Client
+SELECT Pers_PersonId, Pers_FirstName, Pers_LastName, Pers_CompanyId, Pers_Title,
+       ISNULL(Pers_Deleted,0) AS Pers_Deleted
+FROM dbo.Person
+WHERE Pers_CompanyId IS NOT NULL AND ISNULL(Pers_Deleted,0) = 0
 
-#### CrmProductSyncService ✅
+// Dans le code :
+String fonction = Objects.toString(r.get("Pers_Title"), null);
+String email = null;  // Email dans table séparée
+String telephone = null;  // Téléphone dans table séparée
+```
+
+**Changements** :
+- ✅ Suppression de `Pers_EmailAddress` (n'existe pas)
+- ✅ Suppression de `Pers_PhoneNumber` (n'existe pas)
+- ✅ Ajout de `Pers_Title` (fonction)
+- ✅ Email/téléphone mis à null (données dans tables séparées)
+- ✅ Filtre des personnes supprimées
+
+**Note** : Pour récupérer les emails, il faudrait utiliser la vue `vEmailCompanyAndPerson` qui fait la jointure avec la table Email.
+
+---
+
+## 🔧 4. InterventionService
+
+### ❌ AVANT (Incorrect)
 ```java
-NewProduct (CRM) → Produit (Portail)
+INSERT INTO dbo.Appointments 
+ (Appt_CompanyId, Appt_PersonId, Appt_OpportunityId, Appt_Subject, Appt_StartDateTime,
+  Appt_Duration, Appt_Status, Appt_Type, Appt_Notes, Appt_CreatedDate, Appt_Deleted)
+VALUES (?,?,?, ?,?, 60, 'Scheduled', ?,?, GETDATE(), 0)
 ```
-- ✅ Corrigé : utilise `setLibelle()` au lieu de `setNom()`
-- ✅ Corrigé : utilise `setCodeProduit()`
-- ✅ Corrigé : `id_externe_crm` en String
-- ✅ Supprimé : `setReference()`, `setCategorie()`, `setVersion()`
 
-#### CrmTicketSyncService ✅
+### ✅ APRÈS (Correct)
 ```java
-Cases (CRM) → Ticket (Portail)
+INSERT INTO dbo.INTERVENTION 
+ (inte_companyid, inte_interlocuteur, inte_name, inte_date,
+  inte_details, inte_type_intervention, inte_CreatedDate, inte_Deleted)
+VALUES (?,?, ?,?, ?,?, GETDATE(), 0)
 ```
-- ✅ Corrigé : utilise ClientRepository au lieu de UtilisateurRepository
-- ✅ Corrigé : `mapCompanyIdToClientId()` cherche dans la table Client
-- ✅ `ticket.clientId` référence maintenant `client.id` (pas `utilisateur.id`)
 
-#### TicketService ✅
+**Changements** :
+- ✅ Table `Appointments` → `INTERVENTION` (table correcte)
+- ✅ Mapping vers les bons champs CRM :
+  - `Appt_CompanyId` → `inte_companyid`
+  - `Appt_StartDateTime` → `inte_date`
+  - `Appt_Notes` → `inte_details`
+  - `Appt_Type` → `inte_type_intervention`
+
+---
+
+## 🔧 5. CrmInterventionSyncService
+
+### ❌ AVANT (Incorrect)
 ```java
-Gestion des tickets
+INSERT INTO dbo.Appointments
+ (Appt_CompanyId, Appt_OpportunityId, Appt_Subject, Appt_StartDateTime,
+  Appt_Duration, Appt_Status, Appt_Type, Appt_Notes, Appt_CreatedDate, Appt_Deleted)
+VALUES (?,?, ?,?, 60, ?, ?,?, GETDATE(), 0)
 ```
-- ✅ Corrigé : utilise ClientRepository
-- ✅ Corrigé : `mapClientIdToCrmCompanyId()` utilise la table Client
-- ✅ Synchronisation CRM utilise le bon mapping
 
-### 3. Contrôleurs
-
-#### ProduitControleur ✅
-- ✅ Aucune correction nécessaire
-- ✅ Utilise correctement le repository
-
-## ⚠️ Points d'Attention Restants
-
-### 1. InterventionService
+### ✅ APRÈS (Correct)
 ```java
-// ⚠️ Utilise des méthodes qui n'existent plus dans Intervention
-intervention.setReference()          // N'existe pas dans le schéma SQL
-intervention.setRaison()             // Devrait être setMotif()
-intervention.setDateIntervention()   // Devrait être setDatePrevue()
-intervention.setTypeIntervention()   // N'existe pas dans le schéma
-intervention.setDateProposeeClient() // Existe dans le schéma
-intervention.setValideeParClient()   // N'existe pas (table séparée)
-intervention.setFicheIntervention()  // N'existe pas (table séparée)
+INSERT INTO dbo.INTERVENTION
+ (inte_companyid, inte_name, inte_date, inte_details,
+  inte_type_intervention, inte_CreatedDate, inte_Deleted)
+VALUES (?,?, ?,?, ?, GETDATE(), 0)
 ```
 
-**Action requise** : Corriger Intervention.java selon le schéma SQL :
-- Remplacer `raison` par `motif`
-- Remplacer `dateIntervention` par `datePrevue`
-- Ajouter `dateDebutReel`, `dateFinReelle`, `dateValidee`
-- Ajouter `modaliteInterventionId`
-- Supprimer `ficheIntervention`, `valideeParClient`
+**Changements** :
+- ✅ Table `Appointments` → `INTERVENTION`
+- ✅ Champs correctement mappés vers structure INTERVENTION
 
-### 2. CrmUtilisateurSyncService
-- ⚠️ **Doublon** avec CrmUsersSyncService
-- **Action** : Supprimer CrmUtilisateurSyncService
+---
 
-### 3. Tables Relationnelles Manquantes
+## 🗑️ 6. Suppression de Fichiers Inutiles
 
-#### À créer comme entités JPA :
+### ✅ Fichier Supprimé
+- **CrmUtilisateurSyncService.java** → Doublon de `CrmUsersSyncService.java`
 
-**UtilisateurRole**
-```java
-@Entity
-public class UtilisateurRole {
-  @Id @GeneratedValue
-  private Integer id;
+**Raison** : Les deux services synchronisaient la même table Users du CRM.
 
-  @ManyToOne
-  private Utilisateur utilisateur;
+---
 
-  @ManyToOne
-  private Role role;
+## 📊 STRUCTURE DES TABLES CRM UTILISÉES
 
-  @ManyToOne
-  private Client client; // Optionnel
-}
+### 1. **Products**
+```
+Prod_ProductId      int      PK
+Prod_Name           nvarchar
+Prod_Description    nvarchar
+Prod_Deleted        tinyint
 ```
 
-**ClientContact**
-```java
-@Entity
-public class ClientContact {
-  @Id @GeneratedValue
-  private Integer id;
-
-  @ManyToOne
-  private Client client;
-
-  @ManyToOne
-  private Utilisateur utilisateur;
-
-  private String fonction;
-  private boolean principal;
-}
+### 2. **Cases**
+```
+Case_CaseId             int      PK
+Case_PrimaryCompanyId   int      → Company
+Case_ProductId          int      → Products
+Case_Description        nvarchar (titre)
+Case_ProblemNote        nvarchar (description)
+Case_Priority           nvarchar ("Low", "Normal", "High", "Urgent")
+Case_Status             nvarchar ("Open", "Closed", etc.)
+Case_Deleted            tinyint
 ```
 
-**ClientProduit**
-```java
-@Entity
-public class ClientProduit {
-  @Id @GeneratedValue
-  private Integer id;
+### 3. **Person**
+```
+Pers_PersonId       int      PK
+Pers_CompanyId      int      → Company
+Pers_FirstName      nvarchar
+Pers_LastName       nvarchar
+Pers_Title          nvarchar (fonction)
+Pers_Deleted        tinyint
+```
+**⚠️ ATTENTION** : PAS de champ email/téléphone direct !
 
-  @ManyToOne
-  private Client client;
-
-  @ManyToOne
-  private Produit produit;
-
-  private String numeroSerie;
-  private LocalDate dateDebutContrat;
-  private LocalDate dateFinContrat;
-  private boolean actif;
-}
+### 4. **INTERVENTION**
+```
+inte_INTERVENTIONid     int      PK
+inte_companyid          int      → Company
+inte_product            int      → Products
+inte_date               datetime
+inte_datedebut          datetime
+inte_detefin            datetime
+inte_details            nvarchar
+inte_type_intervention  nchar
+inte_Deleted            int
 ```
 
-### 4. Tables Référentielles
+---
 
-À créer :
-- **Role** (CLIENT, CONSULTANT, ADMIN)
-- **PrioriteTicket** (URGENT, HAUTE, NORMALE, BASSE)
-- **TypeTicket** (INCIDENT, DEMANDE, EVOLUTION, QUESTION)
-- **StatutTicket** (OUVERT, EN_COURS, EN_ATTENTE, etc.)
-- **StatutIntervention** (PROPOSEE, PLANIFIEE, EN_COURS, etc.)
-- **ModaliteIntervention** (SITE, DISTANCE)
-- **TypeInteraction** (MESSAGE, SYSTEME, RELANCE)
-- **CanalInteraction** (PORTAIL, EMAIL, WHATSAPP)
+## ✅ SERVICES DE SYNCHRONISATION FINAUX
 
-## 📊 Résumé des Corrections
+### Services Actifs
+1. ✅ **CrmCompanySyncService** - Synchronise Company
+2. ✅ **CrmPersonSyncService** - Synchronise Person → Client
+3. ✅ **CrmUsersSyncService** - Synchronise Users → Utilisateur
+4. ✅ **CrmProductSyncService** - Synchronise Products → Produit
+5. ✅ **CrmTicketSyncService** - Synchronise Cases → Ticket
+6. ✅ **CrmInterventionSyncService** - Synchronise INTERVENTION (bidirectionnel)
 
-| Composant | État | Commentaire |
-|-----------|------|-------------|
-| Utilisateur.java | ✅ | Conforme au schéma SQL |
-| Client.java | ✅ | NOUVEAU - Conforme |
-| Produit.java | ✅ | Conforme au schéma SQL |
-| Ticket.java | ⚠️ | `id_externe_crm` devrait être INT |
-| Intervention.java | ❌ | À corriger entièrement |
-| Interaction.java | ❌ | À corriger |
-| PieceJointe.java | ❌ | À corriger |
-| CrmCompanySyncService | ✅ | Utilise Client |
-| CrmPersonSyncService | ✅ | Vérifie Client |
-| CrmUsersSyncService | ✅ | OK |
-| CrmProductSyncService | ✅ | Corrigé (libelle) |
-| CrmTicketSyncService | ✅ | Utilise Client |
-| TicketService | ✅ | Utilise Client |
-| InterventionService | ❌ | À corriger |
-| CrmUtilisateurSyncService | ⚠️ | Doublon à supprimer |
+### Services Supprimés
+- ❌ **CrmUtilisateurSyncService** (doublon)
 
-## 🎯 Architecture Finale
+---
 
-```
-CRM Database (Sage CRM)
-├── Company → Client (table client)
-│   └── id_externe_crm = "123"
-├── Person → Utilisateur (table utilisateur)
-│   └── id_externe_crm = "PERSON-456"
-│   └── Lié au Client via ClientContact
-├── Users → Utilisateur (table utilisateur)
-│   └── id_externe_crm = "USER-789"
-│   └── Pas de Client (utilisateurs internes)
-└── NewProduct → Produit (table produit)
-    └── id_externe_crm = "789"
+## 🎯 MAPPING CRM → PORTAIL
 
-Relations dans le Portail:
-- Ticket.client_id → Client.id ✅
-- ClientContact : Client ↔ Utilisateur
-- UtilisateurRole : Utilisateur ↔ Role ↔ Client (optionnel)
-- ClientProduit : Client ↔ Produit (avec dates contrat)
-```
+| CRM Table     | Portail Table | Champs Clés Utilisés              |
+|---------------|---------------|-----------------------------------|
+| Company       | company       | Comp_CompanyId, Comp_Name         |
+| Person        | client        | Pers_PersonId, Pers_CompanyId     |
+| Users         | utilisateur   | User_UserId, User_EmailAddress    |
+| Products      | produit       | Prod_ProductId, Prod_Name         |
+| Cases         | ticket        | Case_CaseId, Case_ProductId       |
+| INTERVENTION  | intervention  | inte_INTERVENTIONid, inte_date    |
 
-## 🚀 Synchronisation
+---
 
-```
-Ordre d'exécution quotidien:
-1. 2h00 - CrmCompanySyncService → Clients
-2. 2h10 - CrmPersonSyncService → Utilisateurs clients
-3. 2h20 - CrmUsersSyncService → Utilisateurs internes
-4. 2h30 - CrmProductSyncService → Produits
+## 📝 NOTES IMPORTANTES
 
-Synchronisation continue:
-- Toutes les 30 min - CrmTicketSyncService
-- Toutes les 15-20 min - CrmInterventionSyncService (bidirectionnel)
-```
+### 1. Emails et Téléphones des Contacts
+Les emails et téléphones des contacts (Person) ne sont PAS dans la table Person directement. Pour les récupérer, il faudrait :
+- Utiliser la vue `vEmailCompanyAndPerson`
+- Ou faire des jointures avec les tables Email et Phone
+
+Pour l'instant, ces champs sont mis à `null` lors de la synchronisation.
+
+### 2. Produits
+La table Products du CRM ne contient PAS de champ `code_produit` séparé. Uniquement `Prod_Name` et `Prod_Description`.
+
+### 3. Interventions
+Les interventions sont maintenant correctement synchronisées vers la table `INTERVENTION` du CRM (et non plus `Appointments`).
+
+---
+
+## ✅ STATUT FINAL
+
+**Toutes les corrections basées sur la structure réelle du CRM Sage ont été appliquées avec succès.**
+
+- ✅ Services de synchronisation alignés avec les vraies tables CRM
+- ✅ Champs corrects utilisés
+- ✅ Filtrage des enregistrements supprimés
+- ✅ Code inutile/doublon supprimé
+- ✅ Architecture cohérente et maintenable
+
+**Date des corrections : 2025-10-08**
