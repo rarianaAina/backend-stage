@@ -6,10 +6,10 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "utilisateur", schema = "dbo")
+@Table(name = "client", schema = "dbo")
 @Getter
 @Setter
-public class Utilisateur {
+public class Client {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
@@ -17,23 +17,20 @@ public class Utilisateur {
   @Column(name="id_externe_crm", length=100)
   private String idExterneCrm;
 
-  @Column(nullable=false, unique=true, length=150)
-  private String identifiant;
+  @Column(name="code_client", length=100)
+  private String codeClient;
 
-  @Column(name="mot_de_passe_hash")
-  private byte[] motDePasseHash;
+  @Column(name="raison_sociale", nullable=false, length=250)
+  private String raisonSociale;
 
-  @Column(name="mot_de_passe_salt")
-  private byte[] motDePasseSalt;
+  @Column(length=100)
+  private String nif;
 
-  @Column(nullable=false, length=150)
-  private String nom;
+  @Column(length=100)
+  private String stat;
 
-  @Column(length=150)
-  private String prenom;
-
-  @Column(length=320)
-  private String email;
+  @Column(length=500)
+  private String adresse;
 
   @Column(length=50)
   private String telephone;
@@ -41,11 +38,11 @@ public class Utilisateur {
   @Column(name="whatsapp_numero", length=50)
   private String whatsappNumero;
 
+  @Column(length=320)
+  private String email;
+
   @Column(nullable=false)
   private boolean actif = true;
-
-  @Column(name="date_derniere_connexion")
-  private LocalDateTime dateDerniereConnexion;
 
   @Column(name="date_creation", nullable=false)
   private LocalDateTime dateCreation;

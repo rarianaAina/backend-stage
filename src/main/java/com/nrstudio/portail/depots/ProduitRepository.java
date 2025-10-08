@@ -9,6 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface ProduitRepository extends JpaRepository<Produit, Integer> {
-  Optional<Produit> findByIdExterneCrm(Integer idExterneCrm);
-  List<Produit> findByActif(Boolean actif);
+  Optional<Produit> findByIdExterneCrm(String idExterneCrm);
+  List<Produit> findByActif(boolean actif);
 }
