@@ -1,9 +1,9 @@
 package com.nrstudio.portail.services;
 
+import com.nrstudio.portail.depots.ClientRepository;
 import com.nrstudio.portail.depots.TicketRepository;
-import com.nrstudio.portail.depots.UtilisateurRepository;
+import com.nrstudio.portail.domaine.Client;
 import com.nrstudio.portail.domaine.Ticket;
-import com.nrstudio.portail.domaine.Utilisateur;
 import com.nrstudio.portail.dto.TicketCreationRequete;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,18 +20,18 @@ public class TicketService {
   private final JdbcTemplate crmJdbc;
   private final EmailNotificationService emailService;
   private final WhatsAppNotificationService whatsAppService;
-  private final UtilisateurRepository utilisateurs;
+  private final ClientRepository clients;
 
   public TicketService(TicketRepository tickets,
                        @Qualifier("crmJdbc") JdbcTemplate crmJdbc,
                        EmailNotificationService emailService,
                        WhatsAppNotificationService whatsAppService,
-                       UtilisateurRepository utilisateurs) {
+                       ClientRepository clients) {
     this.tickets = tickets;
     this.crmJdbc = crmJdbc;
     this.emailService = emailService;
     this.whatsAppService = whatsAppService;
-    this.utilisateurs = utilisateurs;
+    this.clients = clients;
   }
 
   @Transactional
@@ -246,9 +246,9 @@ public class TicketService {
 
   private Integer mapClientIdToCrmCompanyId(Integer clientId) {
     try {
-      Utilisateur utilisateur = utilisateurs.findById(clientId).orElse(null);
-      if (utilisateur != null && utilisateur.getCompanyId() != null) {
-        return utilisateur.getCompanyId();
+      Client client = clients.findById(clientId).orElse(null);
+      if (client != null && client.getIdExterneCrm() != null) {
+        return Integer.valueOf(client.getIdExterneCrm());
       }
       return null;
     } catch (Exception e) {

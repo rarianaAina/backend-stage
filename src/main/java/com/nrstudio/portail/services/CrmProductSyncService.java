@@ -40,50 +40,33 @@ public class CrmProductSyncService {
       if (produitId == null) continue;
       if (toInt(r.get("Prod_Deleted")) == 1) continue;
 
-      Produit produitExistant = produits.findByIdExterneCrm(produitId).orElse(null);
+      String idExterneCrm = String.valueOf(produitId);
+      Produit produitExistant = produits.findByIdExterneCrm(idExterneCrm).orElse(null);
 
-      String nom = Objects.toString(r.get("Prod_Name"), "Produit " + produitId);
+      String libelle = Objects.toString(r.get("Prod_Name"), "Produit " + produitId);
       String description = Objects.toString(r.get("Prod_PRDescription"), null);
-      String reference = Objects.toString(r.get("Prod_Code"), null);
-      Integer familyId = toInt(r.get("Prod_ProductFamilyId"));
-      String categorie = recupererNomFamille(familyId);
+      String codeProduit = Objects.toString(r.get("Prod_Code"), null);
 
       if (produitExistant != null) {
-        produitExistant.setNom(nom);
+        produitExistant.setLibelle(libelle);
         produitExistant.setDescription(description);
-        produitExistant.setReference(reference);
-        produitExistant.setCategorie(categorie);
+        produitExistant.setCodeProduit(codeProduit);
         produitExistant.setDateMiseAJour(LocalDateTime.now());
         produits.save(produitExistant);
       } else {
         Produit nouveauProduit = new Produit();
-        nouveauProduit.setNom(nom);
+        nouveauProduit.setLibelle(libelle);
         nouveauProduit.setDescription(description);
-        nouveauProduit.setReference(reference);
-        nouveauProduit.setCategorie(categorie);
-        nouveauProduit.setVersion(null);
+        nouveauProduit.setCodeProduit(codeProduit);
         nouveauProduit.setActif(true);
         nouveauProduit.setDateCreation(LocalDateTime.now());
         nouveauProduit.setDateMiseAJour(LocalDateTime.now());
-        nouveauProduit.setIdExterneCrm(produitId);
+        nouveauProduit.setIdExterneCrm(idExterneCrm);
         produits.save(nouveauProduit);
       }
     }
   }
 
-  private String recupererNomFamille(Integer familyId) {
-    if (familyId == null) return null;
-    try {
-      String nom = crmJdbc.queryForObject(
-        "SELECT ProdFam_Name FROM dbo.ProductFamily WHERE ProdFam_ProductFamilyId = ?",
-        String.class,
-        familyId
-      );
-      return nom;
-    } catch (Exception e) {
-      return null;
-    }
-  }
 
   private Integer toInt(Object o) {
     if (o == null) return null;

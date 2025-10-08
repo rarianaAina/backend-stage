@@ -1,9 +1,9 @@
 package com.nrstudio.portail.services;
 
+import com.nrstudio.portail.depots.ClientRepository;
 import com.nrstudio.portail.depots.TicketRepository;
-import com.nrstudio.portail.depots.UtilisateurRepository;
+import com.nrstudio.portail.domaine.Client;
 import com.nrstudio.portail.domaine.Ticket;
-import com.nrstudio.portail.domaine.Utilisateur;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,14 +21,14 @@ public class CrmTicketSyncService {
 
   private final JdbcTemplate crmJdbc;
   private final TicketRepository tickets;
-  private final UtilisateurRepository utilisateurs;
+  private final ClientRepository clients;
 
   public CrmTicketSyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
                               TicketRepository tickets,
-                              UtilisateurRepository utilisateurs) {
+                              ClientRepository clients) {
     this.crmJdbc = crmJdbc;
     this.tickets = tickets;
-    this.utilisateurs = utilisateurs;
+    this.clients = clients;
   }
 
   @Scheduled(cron = "0 */30 * * * *")
@@ -146,12 +146,10 @@ public class CrmTicketSyncService {
   private Integer mapCompanyIdToClientId(Integer companyId) {
     if (companyId == null) return null;
     try {
-      List<Utilisateur> utilisateursCompany = utilisateurs.findAll().stream()
-        .filter(u -> companyId.equals(u.getCompanyId()))
-        .toList();
-
-      if (!utilisateursCompany.isEmpty()) {
-        return utilisateursCompany.get(0).getId();
+      String idExterneCrm = String.valueOf(companyId);
+      Client client = clients.findByIdExterneCrm(idExterneCrm).orElse(null);
+      if (client != null) {
+        return client.getId();
       }
       return null;
     } catch (Exception e) {
