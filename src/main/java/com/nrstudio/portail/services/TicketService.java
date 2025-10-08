@@ -245,7 +245,14 @@ public class TicketService {
   }
 
   private Integer mapClientIdToCrmCompanyId(Integer clientId) {
-    // si tu as une table de correspondance Portail<->CRM, mappe ici
-    return null; // facultatif
+    try {
+      Utilisateur utilisateur = utilisateurs.findById(clientId).orElse(null);
+      if (utilisateur != null && utilisateur.getCompanyId() != null) {
+        return utilisateur.getCompanyId();
+      }
+      return null;
+    } catch (Exception e) {
+      return null;
+    }
   }
 }
