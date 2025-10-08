@@ -1,6 +1,8 @@
 package com.nrstudio.portail.services;
 
+import com.nrstudio.portail.depots.ClientRepository;
 import com.nrstudio.portail.depots.UtilisateurRepository;
+import com.nrstudio.portail.domaine.Client;
 import com.nrstudio.portail.domaine.Utilisateur;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -9,7 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,11 +22,14 @@ public class CrmPersonSyncService {
 
   private final JdbcTemplate crmJdbc;
   private final UtilisateurRepository utilisateurs;
+  private final ClientRepository clients;
 
   public CrmPersonSyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
-                              UtilisateurRepository utilisateurs) {
+                              UtilisateurRepository utilisateurs,
+                              ClientRepository clients) {
     this.crmJdbc = crmJdbc;
     this.utilisateurs = utilisateurs;
+    this.clients = clients;
   }
 
   @Scheduled(cron = "0 10 2 * * *")
@@ -47,12 +52,18 @@ public class CrmPersonSyncService {
       if (utilisateurs.findByIdExterneCrm(idExterneCrm).isPresent()) continue;
 
       Integer companyId = toInt(r.get("Pers_CompanyId"));
+      String companyIdCrm = String.valueOf(companyId);
+
+      Client client = clients.findByIdExterneCrm(companyIdCrm).orElse(null);
+      if (client == null) {
+        System.out.println("Client CRM " + companyId + " non trouvé pour Person " + personId);
+        continue;
+      }
+
       String prenom = Objects.toString(r.get("Pers_FirstName"), "");
       String nom = Objects.toString(r.get("Pers_LastName"), "");
       String email = Objects.toString(r.get("Pers_EmailAddress"), null);
       String telephone = Objects.toString(r.get("Pers_PhoneNumber"), null);
-
-      String companyNom = recupererNomCompany(companyId);
 
       String identifiant = genererIdentifiant(email, personId);
 
@@ -63,33 +74,16 @@ public class CrmPersonSyncService {
       user.setEmail(email);
       user.setTelephone(telephone);
       user.setActif(true);
-      user.setTypeCompte("PERSON");
-      user.setCompanyId(companyId);
-      user.setCompanyNom(companyNom);
-      user.setRole("CLIENT");
       user.setIdExterneCrm(idExterneCrm);
-      user.setDateMiseAJour(OffsetDateTime.now());
+      user.setDateCreation(LocalDateTime.now());
+      user.setDateMiseAJour(LocalDateTime.now());
 
       String motDePasseTemporaire = genererMotDePasseTemporaire();
       user.setMotDePasseHash(BCrypt.hashpw(motDePasseTemporaire, BCrypt.gensalt()).getBytes());
 
       utilisateurs.save(user);
 
-      System.out.println("Utilisateur client créé: " + identifiant + " / MDP temporaire: " + motDePasseTemporaire);
-    }
-  }
-
-  private String recupererNomCompany(Integer companyId) {
-    if (companyId == null) return null;
-    try {
-      String nom = crmJdbc.queryForObject(
-        "SELECT Comp_Name FROM dbo.Company WHERE Comp_CompanyId = ?",
-        String.class,
-        companyId
-      );
-      return nom;
-    } catch (Exception e) {
-      return "Société " + companyId;
+      System.out.println("Utilisateur client créé: " + identifiant + " (Client: " + client.getRaisonSociale() + ") / MDP temporaire: " + motDePasseTemporaire);
     }
   }
 
