@@ -27,7 +27,7 @@ public class CrmUsersSyncService {
     this.utilisateurs = utilisateurs;
   }
 
-  @Scheduled(cron = "0 20 2 * * *")
+  @Scheduled(cron = "0 * * * * *")
   @Transactional
   public void synchroniserUsers() {
     final String sql =
@@ -42,7 +42,7 @@ public class CrmUsersSyncService {
       if (userId == null) continue;
       if (toInt(r.get("User_Deleted")) == 1) continue;
 
-      String idExterneCrm = "USER-" + userId;
+      String idExterneCrm = userId.toString();
       if (utilisateurs.findByIdExterneCrm(idExterneCrm).isPresent()) continue;
 
       String prenom = Objects.toString(r.get("User_FirstName"), "");
@@ -99,7 +99,8 @@ public class CrmUsersSyncService {
   }
 
   private String genererMotDePasseTemporaire() {
-    return "Optimada" + UUID.randomUUID().toString().substring(0, 8) + "!";
+    // return "Optimada" + UUID.randomUUID().toString().substring(0, 8) + "!";
+    return "test123+";
   }
 
   private Integer toInt(Object o) {

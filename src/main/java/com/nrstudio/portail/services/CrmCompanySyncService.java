@@ -25,11 +25,11 @@ public class CrmCompanySyncService {
     this.companies = companies;
   }
 
-  @Scheduled(cron = "0 0 2 * * *")
+  @Scheduled(cron = "0 * * * * *")
   @Transactional
   public void synchroniserCompanies() {
     final String sql =
-      "SELECT Comp_CompanyId, Comp_Name, Comp_Type, Comp_PhoneNumber, Comp_EmailAddress, " +
+      "SELECT Comp_CompanyId, Comp_Name, Comp_Type, " +
       "       ISNULL(Comp_Deleted,0) AS Comp_Deleted " +
       "FROM dbo.Company " +
       "WHERE Comp_Type = 'Customer'";
@@ -45,13 +45,13 @@ public class CrmCompanySyncService {
       Company companyExistante = companies.findByIdExterneCrm(idExterneCrm).orElse(null);
 
       String nom = Objects.toString(r.get("Comp_Name"), "Société " + companyId);
-      String telephone = Objects.toString(r.get("Comp_PhoneNumber"), null);
-      String email = Objects.toString(r.get("Comp_EmailAddress"), null);
+      
+      
 
       if (companyExistante != null) {
         companyExistante.setNom(nom);
-        companyExistante.setTelephone(telephone);
-        companyExistante.setEmail(email);
+        
+        
         companyExistante.setDateMiseAJour(LocalDateTime.now());
         companies.save(companyExistante);
       } else {
@@ -59,8 +59,8 @@ public class CrmCompanySyncService {
         nouvelleCompany.setIdExterneCrm(idExterneCrm);
         nouvelleCompany.setCodeCompany("COMP-" + companyId);
         nouvelleCompany.setNom(nom);
-        nouvelleCompany.setTelephone(telephone);
-        nouvelleCompany.setEmail(email);
+        
+        
         nouvelleCompany.setActif(true);
         nouvelleCompany.setDateCreation(LocalDateTime.now());
         nouvelleCompany.setDateMiseAJour(LocalDateTime.now());

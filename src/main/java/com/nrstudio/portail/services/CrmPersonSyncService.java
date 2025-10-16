@@ -31,7 +31,7 @@ public class CrmPersonSyncService {
     this.companies = companies;
   }
 
-  @Scheduled(cron = "0 10 2 * * *")
+  @Scheduled(cron = "0 * * * * *")
   @Transactional
   public void synchroniserPersons() {
     final String sql =

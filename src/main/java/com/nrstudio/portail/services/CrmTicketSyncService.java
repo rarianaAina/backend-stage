@@ -31,17 +31,17 @@ public class CrmTicketSyncService {
     this.companies = companies;
   }
 
-  @Scheduled(cron = "0 */30 * * * *")
+  @Scheduled(cron = "0 */2 * * * *")
   @Transactional
   public void importerDepuisCrm() {
     final String sql =
-      "SELECT Case_CaseId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status, " +
+      "SELECT Case_CaseId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status, Case_CreatedBy, " +
       "       Case_ProductId, Case_PrimaryCompanyId, Case_Opened, Case_Closed, Case_CustomerRef, " +
       "       ISNULL(Case_Deleted,0) AS Case_Deleted " +
       "FROM dbo.Cases WHERE ISNULL(Case_Deleted,0) = 0";
 
     List<Map<String,Object>> rows = crmJdbc.queryForList(sql);
-
+    
     for (Map<String,Object> r : rows) {
       Integer caseId = toInt(r.get("Case_CaseId"));
       if (caseId == null) continue;
@@ -56,7 +56,8 @@ public class CrmTicketSyncService {
       Integer produitId  = toInt(r.get("Case_ProductId"));
       Integer compId     = toInt(r.get("Case_PrimaryCompanyId"));
       String ref         = Objects.toString(r.get("Case_CustomerRef"), null);
-
+      Integer creeParUtilisateurId = toInt(r.get("Case_CreatedBy"));
+      System.out.println(creeParUtilisateurId);
 
       LocalDateTime opened = toLdt(r.get("Case_Opened"));
       LocalDateTime closed = toLdt(r.get("Case_Closed"));
@@ -80,7 +81,7 @@ public class CrmTicketSyncService {
       t.setRaison(null);
       t.setPolitiqueAcceptee(true);
 
-      t.setCreeParUtilisateurId(1);
+      t.setCreeParUtilisateurId(creeParUtilisateurId);
       t.setAffecteAUtilisateurId(null);
 
       t.setDateCreation(opened != null ? opened : LocalDateTime.now());
