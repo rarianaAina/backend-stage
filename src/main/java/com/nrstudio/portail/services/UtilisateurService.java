@@ -56,4 +56,8 @@ public class UtilisateurService {
   public Optional<Utilisateur> trouverParIdentifiant(String identifiant) {
     return repo.findByIdentifiant(identifiant);
   }
+
+  public Optional<Utilisateur> trouverParEmail(String email) {
+    return repo.findByEmail(email);
+  }
 }

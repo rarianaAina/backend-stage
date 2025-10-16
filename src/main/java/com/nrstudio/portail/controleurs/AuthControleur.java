@@ -28,8 +28,11 @@ public class AuthControleur {
 
   @PostMapping("/connexion")
   public ResponseEntity<?> connexion(@RequestBody ConnexionRequete req) {
+    System.out.println(req.getEmail());
+    System.out.println(req.getMotDePasse());
     System.out.println("Tato");
-    Optional<Utilisateur> opt = utilisateurs.trouverParIdentifiant(req.getIdentifiant());
+    Optional<Utilisateur> opt = utilisateurs.trouverParEmail(req.getEmail());
+    
     if (opt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Identifiants invalides");
     }
@@ -39,8 +42,8 @@ public class AuthControleur {
                     : new String(u.getMotDePasseHash(), StandardCharsets.UTF_8);
 
     if (stocke != null && BCrypt.checkpw(req.getMotDePasse(), stocke)) {
-      String jeton = jwt.generer(u.getIdentifiant());
-      return ResponseEntity.ok(new ConnexionReponse(jeton, u.getIdentifiant()));
+      String jeton = jwt.generer(u.getEmail());
+      return ResponseEntity.ok(new ConnexionReponse(jeton, u.getEmail()));
     }
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Identifiants invalides");
   }
