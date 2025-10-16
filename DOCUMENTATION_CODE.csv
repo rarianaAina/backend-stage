@@ -1,0 +1,79 @@
+﻿Dossier;Fichier;Fonction;Description;Crypté;Fichier appelant;Menu appelant;Bouton appelant;BDD;Statut
+;PortailApplication.java;main;Méthode main;Non;;;;;Actif
+config;CrmDataSourceConfig.java;crmDataSource;Configuration - crmDataSource;Non;;;;;Actif
+config;CrmDataSourceConfig.java;crmJdbc;Configuration - crmJdbc;Non;;;;;Actif
+config;CrmDataSourceConfig.java;crmProps;Configuration - crmProps;Non;;;;;Actif
+config;CrmDataSourceConfig.java;portailDataSource;Configuration - portailDataSource;Non;;;;;Actif
+config;CrmDataSourceConfig.java;portailProps;Configuration - portailProps;Non;;;;;Actif
+controleurs;AuthControleur.java;connexion;API REST POST - Authentification utilisateur;Non;;;;;Actif
+controleurs;DiagnosticControleur.java;listerTables;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InteractionControleur.java;creer;API REST POST - Création;Non;;;;;Actif
+controleurs;InteractionControleur.java;lister;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InteractionControleur.java;listerParIntervention;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InteractionControleur.java;listerParTicket;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InteractionControleur.java;obtenir;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InterventionControleur.java;cloturer;API REST PUT /{id}/cloturer;Non;;;;;Actif
+controleurs;InterventionControleur.java;creer;API REST POST - Création;Non;;;;;Actif
+controleurs;InterventionControleur.java;lister;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InterventionControleur.java;listerParConsultant;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InterventionControleur.java;listerParTicket;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InterventionControleur.java;obtenir;API REST GET - Consultation;Non;;;;;Actif
+controleurs;InterventionControleur.java;proposerNouvelleDate;API REST PUT /{id}/proposer-date;Non;;;;;Actif
+controleurs;InterventionControleur.java;validerDate;API REST PUT /{id}/valider-date;Non;;;;;Actif
+controleurs;PieceJointeControleur.java;lister;API REST GET - Consultation;Non;;;;;Actif
+controleurs;PieceJointeControleur.java;listerParIntervention;API REST GET - Consultation;Non;;;;;Actif
+controleurs;PieceJointeControleur.java;listerParTicket;API REST GET - Consultation;Non;;;;;Actif
+controleurs;PieceJointeControleur.java;obtenir;API REST GET - Consultation;Non;;;;;Actif
+controleurs;PieceJointeControleur.java;supprimer;API REST DELETE - Suppression;Non;;;;;Actif
+controleurs;PieceJointeControleur.java;telecharger;API REST GET /telecharger/{id};Non;;;;;Actif
+controleurs;PieceJointeControleur.java;televerser;API REST POST consumes = MediaType.MULTIPART_FORM_DATA_VALUE;Non;;;;;Actif
+controleurs;ProduitControleur.java;lister;API REST GET - Consultation;Non;;;;;Actif
+controleurs;ProduitControleur.java;listerActifs;API REST GET - Consultation;Non;;;;;Actif
+controleurs;ProduitControleur.java;listerParCompany;API REST GET - Consultation;Non;;;;;Actif
+controleurs;ProduitControleur.java;obtenir;API REST GET - Consultation;Non;;;;;Actif
+controleurs;TicketControleur.java;changerStatut;API REST PUT /{id}/statut;Non;;;;;Actif
+controleurs;TicketControleur.java;creer;API REST POST - Création;Non;;;;;Actif
+controleurs;TicketControleur.java;lister;API REST GET - Consultation;Non;;;;;Actif
+controleurs;TicketControleur.java;listerParCompany;API REST GET - Consultation;Non;;;;;Actif
+controleurs;TicketControleur.java;listerParConsultant;API REST GET - Consultation;Non;;;;;Actif
+controleurs;TicketControleur.java;obtenir;API REST GET - Consultation;Non;;;;;Actif
+controleurs;UtilisateurControleur.java;creer;API REST POST - Création;Non;;;;;Actif
+controleurs;UtilisateurControleur.java;definirMotDePasse;API REST POST /{id}/mot-de-passe;Non;;;;;Actif
+controleurs;UtilisateurControleur.java;lister;API REST GET - Consultation;Non;;;;;Actif
+controleurs;UtilisateurControleur.java;mettreAJour;API REST PUT /{id};Non;;;;;Actif
+controleurs;UtilisateurControleur.java;obtenir;API REST GET - Consultation;Non;;;;;Actif
+securite;JwtSimple.java;generer;Génération token JWT;Non;;;;;Actif
+services;CrmCompanySyncService.java;synchroniserCompanies;Synchronisation CRM 0 0 2 * * *;Non;;;;CRM Sage (lecture) + Portail_Client (écriture);Actif
+services;CrmInterventionSyncService.java;exporterVersCrm;Export données vers CRM 0 */20 * * * *;Non;;;;CRM Sage (lecture) + Portail_Client (écriture);Actif
+services;CrmInterventionSyncService.java;importerDepuisCrm;Import données depuis CRM 0 */15 * * * *;Non;;;;CRM Sage (lecture) + Portail_Client (écriture);Actif
+services;CrmPersonSyncService.java;synchroniserPersons;Synchronisation CRM 0 10 2 * * *;Non;;;;CRM Sage (lecture) + Portail_Client (écriture);Actif
+services;CrmProductSyncService.java;synchroniserProduits;Synchronisation CRM 0 30 2 * * *;Non;;;;CRM Sage (lecture) + Portail_Client (écriture);Actif
+services;CrmTicketSyncService.java;importerDepuisCrm;Import données depuis CRM 0 */30 * * * *;Non;;;;CRM Sage (lecture) + Portail_Client (écriture);Actif
+services;CrmUsersSyncService.java;synchroniserUsers;Synchronisation CRM 0 20 2 * * *;Non;;;;CRM Sage (lecture) + Portail_Client (écriture);Actif
+services;EmailNotificationService.java;envoyerNotificationChangementStatut;Logique métier - envoyerNotificationChangementStatut;Non;;;;Portail_Client;Actif
+services;EmailNotificationService.java;envoyerNotificationDateValidee;Logique métier - envoyerNotificationDateValidee;Non;;;;Portail_Client;Actif
+services;EmailNotificationService.java;envoyerNotificationInterventionCloturee;Logique métier - envoyerNotificationInterventionCloturee;Non;;;;Portail_Client;Actif
+services;EmailNotificationService.java;envoyerNotificationInterventionCreee;Logique métier - envoyerNotificationInterventionCreee;Non;;;;Portail_Client;Actif
+services;EmailNotificationService.java;envoyerNotificationTicketCree;Logique métier - envoyerNotificationTicketCree;Non;;;;Portail_Client;Actif
+services;InterventionService.java;cloturerIntervention;Logique métier - cloturerIntervention;Non;;;;Portail_Client;Actif
+services;InterventionService.java;creerIntervention;Création et synchronisation vers CRM;Non;;;;Portail_Client;Actif
+services;InterventionService.java;listerInterventionsConsultant;Logique métier - listerInterventionsConsultant;Non;;;;Portail_Client;Actif
+services;InterventionService.java;listerInterventionsTicket;Logique métier - listerInterventionsTicket;Non;;;;Portail_Client;Actif
+services;InterventionService.java;proposerNouvelleDate;Logique métier - proposerNouvelleDate;Non;;;;Portail_Client;Actif
+services;InterventionService.java;validerDate;Logique métier - validerDate;Non;;;;Portail_Client;Actif
+services;TicketService.java;changerStatut;Logique métier - changerStatut;Non;;;;Portail_Client;Actif
+services;TicketService.java;creerEtSynchroniser;Synchronisation CRM (automatique);Non;;;;Portail_Client;Actif
+services;TicketService.java;listerTicketsCompany;Logique métier - listerTicketsCompany;Non;;;;Portail_Client;Actif
+services;TicketService.java;listerTicketsConsultant;Logique métier - listerTicketsConsultant;Non;;;;Portail_Client;Actif
+services;UtilisateurService.java;creer;Création et synchronisation vers CRM;Non;;;;Portail_Client;Actif
+services;UtilisateurService.java;definirMotDePasse;Logique métier - definirMotDePasse;Non;;;;Portail_Client;Actif
+services;UtilisateurService.java;lister;Logique métier - lister;Non;;;;Portail_Client;Actif
+services;UtilisateurService.java;mettreAJour;Logique métier - mettreAJour;Non;;;;Portail_Client;Actif
+services;UtilisateurService.java;obtenir;Logique métier - obtenir;Non;;;;Portail_Client;Actif
+services;UtilisateurService.java;trouverParIdentifiant;Logique métier - trouverParIdentifiant;Non;;;;Portail_Client;Actif
+services;WhatsAppNotificationService.java;envoyerNotificationChangementStatut;Logique métier - envoyerNotificationChangementStatut;Non;;;;Portail_Client;Actif
+services;WhatsAppNotificationService.java;envoyerNotificationDateValidee;Logique métier - envoyerNotificationDateValidee;Non;;;;Portail_Client;Actif
+services;WhatsAppNotificationService.java;envoyerNotificationInterventionCreee;Logique métier - envoyerNotificationInterventionCreee;Non;;;;Portail_Client;Actif
+services;WhatsAppNotificationService.java;envoyerNotificationTicketCree;Logique métier - envoyerNotificationTicketCree;Non;;;;Portail_Client;Actif
+services;WhatsAppNotificationService.java;envoyerNotificationWhatsApp;Envoi notification WhatsApp;Non;;;;Portail_Client;Actif
+services;WhatsAppNotificationService.java;init;Logique métier - init;Non;;;;Portail_Client;Actif
