@@ -27,6 +27,12 @@ public class TicketControleur {
     return repo.findAll(); 
   }
 
+  //Ticket par utilisateur
+  @GetMapping("/utilisateur/{utilisateurId}")
+  public List<Ticket> listerParUtilisateur(@PathVariable("utilisateurId") Integer utilisateurId) {
+    return service.listerTicketsUtilisateur(utilisateurId);
+  }
+
   @GetMapping("/{id}")
   public Ticket obtenir(@PathVariable("id") Integer id) {
     System.out.println("Obtention du ticket avec l'id : " + id);
