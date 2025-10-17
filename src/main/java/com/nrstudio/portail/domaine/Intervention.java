@@ -3,8 +3,11 @@ package com.nrstudio.portail.domaine;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "intervention", schema = "dbo")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Intervention {
 
   @Id

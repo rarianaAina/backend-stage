@@ -22,10 +22,16 @@ public class TicketControleur {
   }
 
   @GetMapping
-  public List<Ticket> lister() { return repo.findAll(); }
+  public List<Ticket> lister() { 
+    System.out.println("OK");
+    return repo.findAll(); 
+  }
 
   @GetMapping("/{id}")
-  public Ticket obtenir(@PathVariable("id") Integer id) { return repo.findById(id).orElseThrow(); }
+  public Ticket obtenir(@PathVariable("id") Integer id) {
+    System.out.println("Obtention du ticket avec l'id : " + id);
+    return repo.findById(id).orElseThrow(); 
+  }
 
   @PostMapping
   public Ticket creer(@RequestBody TicketCreationRequete req) { return service.creerEtSynchroniser(req); }
