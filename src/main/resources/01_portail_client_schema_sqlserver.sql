@@ -25,11 +25,14 @@ GO
 /* =========================================================
    Tables de référence (codes & libellés)
 ========================================================= */
+
 CREATE TABLE dbo.role (
     id               INT IDENTITY(1,1) PRIMARY KEY,
     code             VARCHAR(50) NOT NULL UNIQUE,      -- CLIENT, CONSULTANT, ADMIN
     libelle          NVARCHAR(150) NOT NULL
 );
+
+
 
 CREATE TABLE dbo.priorite_ticket (
     id               INT IDENTITY(1,1) PRIMARY KEY,
@@ -89,22 +92,22 @@ CREATE TABLE dbo.company (
     date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME())
 );
 
-CREATE TABLE dbo.client (
-    id                      INT IDENTITY(1,1) PRIMARY KEY,
-    company_id              INT NOT NULL,              -- référence vers company
-    id_externe_crm          VARCHAR(100) NULL,         -- clé externe Sage CRM (Pers_PersonId)
-    nom                     NVARCHAR(150) NOT NULL,
-    prenom                  NVARCHAR(150) NULL,
-    email                   VARCHAR(320) NULL,
-    telephone               VARCHAR(50) NULL,
-    whatsapp_numero         VARCHAR(50) NULL,
-    fonction                NVARCHAR(150) NULL,
-    principal               BIT NOT NULL DEFAULT(0),
-    actif                   BIT NOT NULL DEFAULT(1),
-    date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
-    date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
-    CONSTRAINT FK_client_company FOREIGN KEY (company_id) REFERENCES dbo.company(id)
-);
+-- CREATE TABLE dbo.client (
+--     id                      INT IDENTITY(1,1) PRIMARY KEY,
+--     company_id              INT NOT NULL,              -- référence vers company
+--     id_externe_crm          VARCHAR(100) NULL,         -- clé externe Sage CRM (Pers_PersonId)
+--     nom                     NVARCHAR(150) NOT NULL,
+--     prenom                  NVARCHAR(150) NULL,
+--     email                   VARCHAR(320) NULL,
+--     telephone               VARCHAR(50) NULL,
+--     whatsapp_numero         VARCHAR(50) NULL,
+--     fonction                NVARCHAR(150) NULL,
+--     principal               BIT NOT NULL DEFAULT(0),
+--     actif                   BIT NOT NULL DEFAULT(1),
+--     date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+--     date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+--     CONSTRAINT FK_client_company FOREIGN KEY (company_id) REFERENCES dbo.company(id)
+-- );
 
 CREATE TABLE dbo.produit (
     id                      INT IDENTITY(1,1) PRIMARY KEY,
@@ -134,32 +137,61 @@ CREATE TABLE dbo.company_produit (
 /* =========================================================
    Utilisateurs & roles
 ========================================================= */
+-- CREATE TABLE dbo.utilisateur (
+--     id                      INT IDENTITY(1,1) PRIMARY KEY,
+--     id_externe_crm          VARCHAR(100) NULL,     -- ex: id contact CRM
+--     identifiant             VARCHAR(150) NOT NULL UNIQUE,  -- fourni par la societe
+--     mot_de_passe_hash       VARBINARY(512) NULL,   -- si auth interne; sinon NULL si SSO
+--     mot_de_passe_salt       VARBINARY(128) NULL,
+--     nom                     NVARCHAR(150) NOT NULL,
+--     prenom                  NVARCHAR(150) NULL,
+--     email                   VARCHAR(320) NULL,
+--     telephone               VARCHAR(50) NULL,
+--     whatsapp_numero         VARCHAR(50) NULL,
+--     actif                   BIT NOT NULL DEFAULT(1),
+--     date_derniere_connexion DATETIME2(0) NULL,
+--     date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+--     date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME())
+-- );
+
 CREATE TABLE dbo.utilisateur (
     id                      INT IDENTITY(1,1) PRIMARY KEY,
+    -- Champs de Company (ajoutés depuis Client)
+    company_id              INT NULL,               -- Référence à l'entreprise
+    -- Champs CRM
     id_externe_crm          VARCHAR(100) NULL,     -- ex: id contact CRM
+    -- Champs d'authentification
     identifiant             VARCHAR(150) NOT NULL UNIQUE,  -- fourni par la societe
     mot_de_passe_hash       VARBINARY(512) NULL,   -- si auth interne; sinon NULL si SSO
     mot_de_passe_salt       VARBINARY(128) NULL,
+    -- Champs personnels
     nom                     NVARCHAR(150) NOT NULL,
     prenom                  NVARCHAR(150) NULL,
     email                   VARCHAR(320) NULL,
     telephone               VARCHAR(50) NULL,
     whatsapp_numero         VARCHAR(50) NULL,
+    -- Statut
     actif                   BIT NOT NULL DEFAULT(1),
+    -- Dates
     date_derniere_connexion DATETIME2(0) NULL,
     date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
-    date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME())
+    date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+    
+    -- Contrainte de clé étrangère pour company_id
+    CONSTRAINT FK_utilisateur_company 
+        FOREIGN KEY (company_id) 
+        REFERENCES dbo.company(id)
 );
 
-CREATE TABLE dbo.utilisateur_role (
-    utilisateur_id          INT NOT NULL,
-    role_id                 INT NOT NULL,
-    company_id              INT NULL,         -- pour restreindre un utilisateur CLIENT a une company specifique
-    PRIMARY KEY (utilisateur_id, role_id, ISNULL(company_id,0)),
-    CONSTRAINT FK_utilisateur_role_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES dbo.utilisateur(id),
-    CONSTRAINT FK_utilisateur_role_role        FOREIGN KEY (role_id)        REFERENCES dbo.role(id),
-    CONSTRAINT FK_utilisateur_role_company     FOREIGN KEY (company_id)     REFERENCES dbo.company(id)
-);
+-- Création d'un index sur company_id pour les performances
+CREATE INDEX IX_utilisateur_company_id ON dbo.utilisateur(company_id);
+
+-- Index sur l'email pour les recherches
+CREATE INDEX IX_utilisateur_email ON dbo.utilisateur(email);
+
+
+--  Utilisateur roles
+
 
 /* Contacts visibles pour le client (annuaire de la societe) */
 CREATE TABLE dbo.contact_societe (
@@ -292,8 +324,8 @@ CREATE INDEX IX_interaction_ticket_date ON dbo.interaction(ticket_id, date_creat
 CREATE TABLE dbo.piece_jointe (
     id                          INT IDENTITY(1,1) PRIMARY KEY,
     nom_fichier                 NVARCHAR(255) NOT NULL,
-    url_contenu                 NVARCHAR(1000) NULL,    -- stockage objet / CDN
-    chemin_fichier              NVARCHAR(1000) NULL,    -- stockage local/partage reseau
+    url_contenu                 NVARCHAR(1000) NULL,
+    chemin_fichier              NVARCHAR(1000) NULL,
     type_mime                   NVARCHAR(200) NULL,
     taille_octets               BIGINT NULL,
     ajoute_par_utilisateur_id   INT NOT NULL,
@@ -301,7 +333,7 @@ CREATE TABLE dbo.piece_jointe (
     intervention_id             INT NULL,
     interaction_id              INT NULL,
     date_ajout                  DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
-    CONSTRAINT CK_pj_cible UNIQUE (id, ISNULL(ticket_id,0), ISNULL(intervention_id,0), ISNULL(interaction_id,0)),
+    CONSTRAINT CK_pj_cible UNIQUE (id, ticket_id, intervention_id, interaction_id),
     CONSTRAINT CK_pj_exactement_un CHECK (
         (CASE WHEN ticket_id IS NOT NULL THEN 1 ELSE 0 END) +
         (CASE WHEN intervention_id IS NOT NULL THEN 1 ELSE 0 END) +
@@ -370,15 +402,26 @@ CREATE TABLE dbo.journal_evenement (
 
 CREATE INDEX IX_journal_entite ON dbo.journal_evenement(entite_type, entite_id, date_evenement);
 
-ALTER TABLE dbo.ticket
-ADD id_externe_crm INT NULL;
-
 /* =========================================================
    Index additionnels pour la recherche multicritere
 ========================================================= */
 CREATE INDEX IX_ticket_prio_type_date ON dbo.ticket(priorite_ticket_id, type_ticket_id, date_creation);
-CREATE INDEX IX_intervention_dates     ON dbo.intervention(date_prevue, date_debut_reel, date_fin_reelle);
 
+CREATE TABLE dbo.utilisateur_role (
+    utilisateur_id          INT NOT NULL,
+    role_id                 INT NOT NULL,
+    company_id              INT NULL,
+    PRIMARY KEY (utilisateur_id, role_id),
+    CONSTRAINT FK_utilisateur_role_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES dbo.utilisateur(id),
+    CONSTRAINT FK_utilisateur_role_role        FOREIGN KEY (role_id)        REFERENCES dbo.role(id),
+    CONSTRAINT FK_utilisateur_role_company     FOREIGN KEY (company_id)     REFERENCES dbo.company(id)
+);
+
+CREATE TABLE dbo.modalite_intervention (
+    id      INT IDENTITY(1,1) PRIMARY KEY,
+    code    VARCHAR(50) NOT NULL UNIQUE,
+    libelle NVARCHAR(150) NOT NULL
+);
 /* =========================================================
    Donnees de base (seeds) minimales
 ========================================================= */
