@@ -136,6 +136,13 @@ public class TicketService {
       .toList();
   }
 
+  //Tickets par utilisateur
+  public List<Ticket> listerTicketsUtilisateur(Integer utilisateurId) {
+    return tickets.findAll().stream()
+      .filter(ticket -> utilisateurId.equals(ticket.getCreeParUtilisateurId()))
+      .toList();
+  }
+  
   @Transactional
   public List<Ticket> listerTicketsConsultant(Integer consultantId) {
     return tickets.findAll().stream()
