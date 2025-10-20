@@ -20,6 +20,9 @@ public class Ticket {
   @Column(name = "company_id", nullable = false)
   private Integer companyId;
 
+  @Column(name = "client_id", nullable = false)
+  private Integer clientId;
+
   @Column(name = "produit_id")
   private Integer produitId;
 
@@ -68,6 +71,14 @@ public class Ticket {
   private Integer idExterneCrm;
 
   // Getters et Setters
+
+  public Integer getClientId() {
+    return clientId;
+  }
+
+  public void setClientId(Integer clientId) {
+    this.clientId = clientId;
+  }
 
   public Integer getId() {
     return id;

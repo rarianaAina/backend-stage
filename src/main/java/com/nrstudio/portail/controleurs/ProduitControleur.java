@@ -19,6 +19,7 @@ public class ProduitControleur {
 
   @GetMapping
   public List<Produit> lister() {
+    System.out.println("Liste des produits");
     return repo.findAll();
   }
 
