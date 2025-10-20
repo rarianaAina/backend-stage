@@ -50,15 +50,19 @@ public class TicketControleur {
     return tickets;
   }
 
+  // Obtenir un ticket spécifique
   @GetMapping("/{id}")
   public Ticket obtenir(@PathVariable("id") Integer id) {
     System.out.println("Obtention du ticket avec l'id : " + id);
     return repo.findById(id).orElseThrow(); 
   }
 
+  //Créer un ticket
   @PostMapping
   public Ticket creer(@RequestBody TicketCreationRequete req) { return service.creerEtSynchroniser(req); }
 
+
+  //Changer le statut d'un ticket
   @PutMapping("/{id}/statut")
   public Ticket changerStatut(@PathVariable("id") Integer id, @RequestBody java.util.Map<String, Object> requete) {
     Integer nouveauStatutId = (Integer) requete.get("statutId");
@@ -66,11 +70,13 @@ public class TicketControleur {
     return service.changerStatut(id, nouveauStatutId, utilisateurId);
   }
 
+  //Lister les tickets par company
   @GetMapping("/company/{companyId}")
   public List<Ticket> listerParCompany(@PathVariable("companyId") Integer companyId) {
     return service.listerTicketsCompany(companyId);
   }
 
+  //Lister les tickets par consultant
   @GetMapping("/consultant/{consultantId}")
   public List<Ticket> listerParConsultant(@PathVariable("consultantId") Integer consultantId) {
     return service.listerTicketsConsultant(consultantId);
