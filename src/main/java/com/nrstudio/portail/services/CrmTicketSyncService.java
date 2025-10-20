@@ -41,8 +41,8 @@
 //   @Transactional
 //   public void importerDepuisCrm() {
 //     final String sql =
-//       "SELECT Case_CaseId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status, Case_CreatedBy, " +
-//       "       Case_ProductId, Case_PrimaryCompanyId, Case_Opened, Case_Closed, Case_CustomerRef, " +
+//       "SELECT Case_CaseId, Case_Description, Case_PrimaryPersonId, Case_ProblemNote, Case_Priority, Case_Status, Case_CreatedBy, " +
+//       "       Case_ProductId, Case_PrimaryCompanyId, Case_CreatedDate, Case_UpdatedDate, Case_Opened, Case_Closed, Case_CustomerRef, " +
 //       "       ISNULL(Case_Deleted,0) AS Case_Deleted " +
 //       "FROM dbo.Cases WHERE ISNULL(Case_Deleted,0) = 0";
 
@@ -61,6 +61,7 @@
 //       String statutStr   = Objects.toString(r.get("Case_Status"), null);
 //       Integer produitId  = toInt(r.get("Case_ProductId"));
 //       Integer compId     = toInt(r.get("Case_PrimaryCompanyId"));
+//       Integer personId    = toInt(r.get("Case_PrimaryPersonId"));
 //       String ref         = Objects.toString(r.get("Case_CustomerRef"), null);
 //       Integer creeParUtilisateurId = toInt(r.get("Case_CreatedBy"));
 //       System.out.println("Utilisateur: " + creeParUtilisateurId);
@@ -78,7 +79,8 @@
       
 //       LocalDateTime opened = toLdt(r.get("Case_Opened"));
 //       LocalDateTime closed = toLdt(r.get("Case_Closed"));
-
+//       LocalDateTime created = toLdt(r.get("Case_CreatedDate"));
+//       LocalDateTime updated = toLdt(r.get("Case_UpdatedDate"));  
 //       Integer companyIdPortail = mapCompanyIdToCompanyId(compId);
 //       if (companyIdPortail == null) {
 //         continue;
@@ -97,13 +99,13 @@
 //       t.setDescription(description);
 //       t.setRaison(null);
 //       t.setPolitiqueAcceptee(true);
-
-//       t.setCreeParUtilisateurId(utilisateurIdPortail);
+//       t.setClientId(personId != null ? personId : null);
+//       t.setCreeParUtilisateurId(creeParUtilisateurId);
 //       //t.setCreeParUtilisateurId(creeParUtilisateurId);
 //       t.setAffecteAUtilisateurId(null);
 
-//       t.setDateCreation(opened != null ? opened : LocalDateTime.now());
-//       t.setDateMiseAJour(LocalDateTime.now());
+//       t.setDateCreation(created != null ? created : LocalDateTime.now());
+//       t.setDateMiseAJour(updated != null ? updated : LocalDateTime.now());
 //       t.setDateCloture(closed);
 //       t.setClotureParUtilisateurId(null);
 
@@ -139,10 +141,10 @@
 
 //   private Integer mapPrioriteCrmStringToId(String s) {
 //     if (s == null) return 2; // ex. Normal
-//     if (s.equals("Urgent")) return 4;
-//     if (s.equals("High"))   return 3;
-//     if (s.equals("Normal")) return 2;
-//     return 1; // Low
+//     if (s.equals("Urgent")) return 3;
+//     if (s.equals("High"))   return 2;
+//     if (s.equals("Normal")) return 1;
+//     return 0; // Low
 // }
 
 

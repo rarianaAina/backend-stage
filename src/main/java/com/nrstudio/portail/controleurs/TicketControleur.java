@@ -24,13 +24,30 @@ public class TicketControleur {
   @GetMapping
   public List<Ticket> lister() { 
     System.out.println("OK");
-    return repo.findAll(); 
+    return repo.findAll();
   }
 
   //Ticket par utilisateur
   @GetMapping("/utilisateur/{utilisateurId}")
   public List<Ticket> listerParUtilisateur(@PathVariable("utilisateurId") Integer utilisateurId) {
-    return service.listerTicketsUtilisateur(utilisateurId);
+    System.out.println("Listing tickets for user id: " + utilisateurId);
+    List<Ticket> tickets = service.listerTicketsUtilisateur(utilisateurId);
+    //Debug
+    System.out.println("Found " + tickets.size() + " tickets for user id: " + utilisateurId);
+    return tickets;
+  }
+
+  //Ticket par utilisateur avec pagination
+  @GetMapping("/utilisateur/{utilisateurId}/page/{page}/size/{size}")
+  public List<Ticket> listerParUtilisateurAvecPagination(
+      @PathVariable("utilisateurId") Integer utilisateurId,
+      @PathVariable("page") Integer page,
+      @PathVariable("size") Integer size) {
+    System.out.println("Listing tickets for user id: " + utilisateurId + " page: " + page + " size: " + size);
+    List<Ticket> tickets = service.listerTicketsUtilisateurAvecPagination(utilisateurId, page, size);
+    //Debug
+    System.out.println("Found " + tickets.size() + " tickets for user id: " + utilisateurId);
+    return tickets;
   }
 
   @GetMapping("/{id}")

@@ -142,11 +142,32 @@ public class TicketService {
       .filter(ticket -> utilisateurId.equals(ticket.getCreeParUtilisateurId()))
       .toList();
   }
-  
+
   @Transactional
   public List<Ticket> listerTicketsConsultant(Integer consultantId) {
     return tickets.findAll().stream()
       .filter(ticket -> consultantId.equals(ticket.getAffecteAUtilisateurId()))
+      .toList();
+  }
+
+  //Ticket par utilisateur avec pagination
+  // public List<Ticket> listerTicketsUtilisateurAvecPagination(Integer utilisateurId, int page, int size) {
+  //   return tickets.findAll().stream()
+  //     .filter(ticket -> utilisateurId.equals(ticket.getCreeParUtilisateurId()))
+  //     .skip(page * size)
+  //     .limit(size)
+  //     .toList();
+  // }
+
+  public List<Ticket> listerTicketsUtilisateurAvecPagination(Integer utilisateurId, int page, int size) {
+      // trouver l'id_externe_crm et non l'utilisateur par rapport à utilisateurId
+      Utilisateur utilisateur = utilisateurs.findById(utilisateurId)
+          .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+      Integer utilisateurIdClient = utilisateur.getIdExterneCrm() != null ? Integer.valueOf(utilisateur.getIdExterneCrm()) : null;  
+    return tickets.findAll().stream()
+      .filter(ticket -> utilisateurIdClient.equals(ticket.getClientId()))
+      .skip(page * size)
+      .limit(size)
       .toList();
   }
 

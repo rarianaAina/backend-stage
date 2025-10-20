@@ -213,6 +213,7 @@ CREATE TABLE dbo.contact_societe (
 CREATE TABLE dbo.ticket (
     id                      INT IDENTITY(1,1) PRIMARY KEY,
     id_externe_crm          INT NULL,                    -- clé externe Sage CRM (Case_CaseId)
+    client_id               INT NOT NULL,                -- client demandeur (utilisateur)
     reference               VARCHAR(50) NOT NULL UNIQUE, -- ex: TCK-2025-000123 (generer cote backend)
     company_id              INT NOT NULL,
     produit_id              INT NULL,                    -- si rattachement a un produit
@@ -223,7 +224,7 @@ CREATE TABLE dbo.ticket (
     description             NVARCHAR(MAX) NULL,
     raison                  NVARCHAR(500) NULL,
     politique_acceptee      BIT NOT NULL DEFAULT(0),
-    cree_par_utilisateur_id INT NOT NULL,                -- createur (client ou staff)
+    cree_par_utilisateur_id INT NULL,                -- createur (client ou staff)
     affecte_a_utilisateur_id INT NULL,                   -- consultant principal (peut changer)
     date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
     date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
@@ -408,6 +409,7 @@ CREATE INDEX IX_journal_entite ON dbo.journal_evenement(entite_type, entite_id, 
 CREATE INDEX IX_ticket_prio_type_date ON dbo.ticket(priorite_ticket_id, type_ticket_id, date_creation);
 
 CREATE TABLE dbo.utilisateur_role (
+
     utilisateur_id          INT NOT NULL,
     role_id                 INT NOT NULL,
     company_id              INT NULL,
@@ -422,6 +424,14 @@ CREATE TABLE dbo.modalite_intervention (
     code    VARCHAR(50) NOT NULL UNIQUE,
     libelle NVARCHAR(150) NOT NULL
 );
+
+CREATE TABLE shedlock (
+    name NVARCHAR(64) NOT NULL PRIMARY KEY,
+    lock_until DATETIME2 NOT NULL,
+    locked_at DATETIME2 NOT NULL,
+    locked_by NVARCHAR(255) NOT NULL
+);
+
 /* =========================================================
    Donnees de base (seeds) minimales
 ========================================================= */
