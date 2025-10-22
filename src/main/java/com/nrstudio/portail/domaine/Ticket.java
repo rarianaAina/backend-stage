@@ -223,4 +223,13 @@ public class Ticket {
   public void setIdExterneCrm(Integer idExterneCrm) {
     this.idExterneCrm = idExterneCrm;
   }
+
+  @Override
+  public String toString() {
+            return "Ticket{" +
+               "id=" + id +
+               ", produitId='" + produitId + '\'' +
+               ", clientId='" + clientId + '\'' +
+               '}';
+  }
 }

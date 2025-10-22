@@ -42,7 +42,7 @@
 //   public void importerDepuisCrm() {
 //     final String sql =
 //       "SELECT Case_CaseId, Case_Description, Case_PrimaryPersonId, Case_ProblemNote, Case_Priority, Case_Status, Case_CreatedBy, " +
-//       "       Case_ProductId, Case_PrimaryCompanyId, Case_CreatedDate, Case_UpdatedDate, Case_Opened, Case_Closed, Case_CustomerRef, " +
+//       "       Case_PARCId, Case_PrimaryCompanyId, Case_CreatedDate, Case_UpdatedDate, Case_Opened, Case_Closed, Case_CustomerRef, " +
 //       "       ISNULL(Case_Deleted,0) AS Case_Deleted " +
 //       "FROM dbo.Cases WHERE ISNULL(Case_Deleted,0) = 0";
 
@@ -59,7 +59,7 @@
 //       String description = Objects.toString(r.get("Case_ProblemNote"), null);
 //       String prioriteStr = Objects.toString(r.get("Case_Priority"), null);
 //       String statutStr   = Objects.toString(r.get("Case_Status"), null);
-//       Integer produitId  = toInt(r.get("Case_ProductId"));
+//       Integer produitId  = toInt(r.get("Case_PARCId"));
 //       Integer compId     = toInt(r.get("Case_PrimaryCompanyId"));
 //       Integer personId    = toInt(r.get("Case_PrimaryPersonId"));
 //       String ref         = Objects.toString(r.get("Case_CustomerRef"), null);

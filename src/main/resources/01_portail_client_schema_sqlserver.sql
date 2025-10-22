@@ -432,6 +432,14 @@ CREATE TABLE shedlock (
     locked_by NVARCHAR(255) NOT NULL
 );
 
+CREATE TABLE dbo.CompanyPARC (
+    parc_PARCid INT PRIMARY KEY,               -- clé primaire pour `parcId`
+    parc_name NVARCHAR(255),                   -- champ pour `parcName`
+    parc_companyid INT,                        -- champ pour `parcCompanyId`
+    comp_companyid INT,                        -- champ pour `compCompanyId`
+    comp_name NVARCHAR(255)                    -- champ pour `compName`
+);
+
 /* =========================================================
    Donnees de base (seeds) minimales
 ========================================================= */
