@@ -45,7 +45,7 @@ public class AuthControleur {
       String jeton = jwt.generer(u.getEmail());
       // Ajoute l'id utilisateur à la réponse
       return ResponseEntity.ok(
-        new ConnexionReponse(jeton, u.getEmail(), u.getId(), u.getNom()) 
+        new ConnexionReponse(jeton, u.getEmail(), u.getId(), u.getNom(), u.getCompanyId()) 
       );
     }
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Identifiants invalides");

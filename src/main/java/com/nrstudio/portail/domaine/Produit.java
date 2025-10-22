@@ -24,7 +24,7 @@ public class Produit {
   @Column(name="code_produit", length=100)
   private String codeProduit;
 
-  @Column(nullable=false, length=250)
+  @Column(nullable=true, length=250)
   private String libelle;
 
   @Lob
