@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "priorite_ticket", schema = "dbo")
+@Table(name = "type_ticket", schema = "dbo")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class PrioriteTicket {
+public class TypeTicket {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,9 +19,6 @@ public class PrioriteTicket {
 
     @Column(name = "libelle", length = 100, nullable = false)
     private String libelle;
-
-    @Column(name = "niveau", nullable = false)
-    private Integer niveau;
 
   
     public Integer getId() {
@@ -34,10 +31,6 @@ public class PrioriteTicket {
 
     public String getLibelle() {
         return libelle;
-    }
-
-    public Integer getNiveau() {
-        return niveau;
     }
 
 
@@ -53,9 +46,7 @@ public class PrioriteTicket {
         this.libelle = libelle;
     }
 
-    public void setNiveau(Integer niveau) {
-        this.niveau = niveau;
-    }
+
 
     @Override
     public String toString() {
@@ -63,7 +54,6 @@ public class PrioriteTicket {
                "id=" + id +
                ", code='" + code + '\'' +
                ", libelle='" + libelle + '\'' +
-               ", niveau=" + niveau +
                '}';
     }
 }

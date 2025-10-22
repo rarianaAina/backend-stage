@@ -12,8 +12,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 public class TicketService {
@@ -42,9 +44,9 @@ public class TicketService {
   @Transactional
   public Ticket creerEtSynchroniser(TicketCreationRequete r) {
 
-    if (!r.isPolitiqueAcceptee()) {
-      throw new IllegalArgumentException("Les politiques doivent être acceptées.");
-    }
+    // if (!r.isPolitiqueAcceptee()) {
+    //   throw new IllegalArgumentException("Les politiques doivent être acceptées.");
+    // }
 
     // 1) Créer dans PORTAIL_CLIENT
     Ticket t = new Ticket();
@@ -52,8 +54,8 @@ public class TicketService {
     t.setProduitId(r.getProduitId());
     t.setTypeTicketId(r.getTypeTicketId());
     t.setPrioriteTicketId(r.getPrioriteTicketId());
-    t.setStatutTicketId(r.getStatutTicketId());
-    t.setTitre(r.getTitre());
+    t.setStatutTicketId(1);
+    t.setTitre(r.getRaison());
     t.setDescription(r.getDescription());
     t.setRaison(r.getRaison());
     t.setPolitiqueAcceptee(true);
@@ -66,34 +68,34 @@ public class TicketService {
     t.setReference("TCK-" + System.currentTimeMillis());
     t = tickets.save(t);
 
-    // 2) Créer le Case dans le CRM (dbo.Cases)
-    String caseDescription = truncate(t.getTitre(), 40);
-    String caseProblemNote = t.getDescription() != null ? t.getDescription() : "";
-    String casePriority = mapPrioriteIdToCrmString(t.getPrioriteTicketId()); // TODO: adapter
-    String caseStatus   = mapStatutIdToCrmString(t.getStatutTicketId());     // TODO: adapter
-    String caseProduct  = mapProduitIdToCrmString(t.getProduitId());         // TODO: adapter
+    // // 2) Créer le Case dans le CRM (dbo.Cases)
+    // String caseDescription = truncate(t.getTitre(), 40);
+    // String caseProblemNote = t.getDescription() != null ? t.getDescription() : "";
+    // String casePriority = mapPrioriteIdToCrmString(t.getPrioriteTicketId()); // TODO: adapter
+    // String caseStatus   = mapStatutIdToCrmString(t.getStatutTicketId());     // TODO: adapter
+    // String caseProduct  = mapProduitIdToCrmString(t.getProduitId());         // TODO: adapter
 
-    // Company côté CRM
-    Integer crmCompanyId = mapCompanyIdToCrmCompanyId(t.getCompanyId());
+    // // Company côté CRM
+    // Integer crmCompanyId = mapCompanyIdToCrmCompanyId(t.getCompanyId());
 
-    Integer caseId = crmJdbc.queryForObject(
-      "INSERT INTO dbo.Cases " +
-      " (Case_PrimaryCompanyId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status, " +
-      "  Case_Product, Case_Opened, Case_Deleted, Case_Source, Case_CustomerRef) " +
-      " VALUES (?,?,?,?,?,?, GETDATE(), 0, 'Portail', ?) ; " +
-      " SELECT CAST(SCOPE_IDENTITY() AS INT);",
-      Integer.class,
-      crmCompanyId, caseDescription, caseProblemNote, casePriority, caseStatus,
-      caseProduct, t.getReference()
-    );
+    // Integer caseId = crmJdbc.queryForObject(
+    //   "INSERT INTO dbo.Cases " +
+    //   " (Case_PrimaryCompanyId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status, " +
+    //   "  Case_Product, Case_Opened, Case_Deleted, Case_Source, Case_CustomerRef) " +
+    //   " VALUES (?,?,?,?,?,?, GETDATE(), 0, 'Portail', ?) ; " +
+    //   " SELECT CAST(SCOPE_IDENTITY() AS INT);",
+    //   Integer.class,
+    //   crmCompanyId, caseDescription, caseProblemNote, casePriority, caseStatus,
+    //   caseProduct, t.getReference()
+    // );
 
-    if (caseId != null) {
-      t.setIdExterneCrm(caseId);
-      t.setDateMiseAJour(LocalDateTime.now());
-      t = tickets.save(t);
-    }
+    // if (caseId != null) {
+    //   t.setIdExterneCrm(caseId);
+    //   t.setDateMiseAJour(LocalDateTime.now());
+    //   t = tickets.save(t);
+    // }
 
-    envoyerNotificationsCreation(t);
+    // envoyerNotificationsCreation(t);
 
     return t;
   }
@@ -170,6 +172,136 @@ public class TicketService {
       .limit(size)
       .toList();
   }
+
+  //Ticket par utilisateur avec pagination et filtres
+  public List<Ticket> listerTicketsUtilisateurAvecPaginationEtFiltres(
+    Integer utilisateurId,
+    int page,
+    int size,
+    String statutTicketIdStr,
+    String reference,
+    String produitIdStr,
+    String dateDebut,
+    String dateFin) {
+
+    Utilisateur utilisateur = utilisateurs.findById(utilisateurId)
+        .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+    Integer utilisateurIdClient = utilisateur.getIdExterneCrm() != null ? Integer.valueOf(utilisateur.getIdExterneCrm()) : null;
+
+    Stream<Ticket> ticketStream = tickets.findAll().stream()
+        .filter(ticket -> utilisateurIdClient.equals(ticket.getClientId()));
+
+    // Filtres
+    if (statutTicketIdStr != null && !statutTicketIdStr.isEmpty()) {
+      try {
+        Integer statutTicketId = Integer.valueOf(statutTicketIdStr);
+        ticketStream = ticketStream.filter(ticket -> statutTicketId.equals(ticket.getStatutTicketId()));
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("statutTicketId invalide : " + statutTicketIdStr);
+      }
+    }
+
+    if (reference != null && !reference.isEmpty()) {
+      ticketStream = ticketStream.filter(ticket -> 
+          ticket.getReference() != null &&
+          ticket.getReference().toLowerCase().contains(reference.toLowerCase()));
+    }
+
+    if (produitIdStr != null && !produitIdStr.isEmpty()) {
+      try {
+        Integer produitId = Integer.valueOf(produitIdStr);
+        ticketStream = ticketStream.filter(ticket -> 
+            ticket.getProduitId() != null &&
+            ticket.getProduitId().equals(produitId));
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("produitId invalide : " + produitIdStr);
+      }
+    }
+
+    if (dateDebut != null && !dateDebut.isEmpty()) {
+      LocalDate debut = LocalDate.parse(dateDebut);
+      ticketStream = ticketStream.filter(ticket -> {
+        if (ticket.getDateCreation() == null) return false;
+        return !ticket.getDateCreation().toLocalDate().isBefore(debut);
+      });
+    }
+
+    if (dateFin != null && !dateFin.isEmpty()) {
+      LocalDate fin = LocalDate.parse(dateFin);
+      ticketStream = ticketStream.filter(ticket -> {
+        if (ticket.getDateCreation() == null) return false;
+        return !ticket.getDateCreation().toLocalDate().isAfter(fin);
+      });
+    }
+
+    return ticketStream
+        .skip(page * size)
+        .limit(size)
+        .toList();
+  }
+
+  // Méthode pour obtenir le nombre total de tickets (pour la pagination)
+  public long countTicketsUtilisateurAvecFiltres(
+    Integer utilisateurId,
+    String statutTicketIdStr,
+    String reference,
+    String produitIdStr,
+    String dateDebut,
+    String dateFin) {
+
+  Utilisateur utilisateur = utilisateurs.findById(utilisateurId)
+      .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+  Integer utilisateurIdClient = utilisateur.getIdExterneCrm() != null ? Integer.valueOf(utilisateur.getIdExterneCrm()) : null;
+
+  Stream<Ticket> ticketStream = tickets.findAll().stream()
+      .filter(ticket -> utilisateurIdClient.equals(ticket.getClientId()));
+
+  // Filtres
+  if (statutTicketIdStr != null && !statutTicketIdStr.isEmpty()) {
+    try {
+      Integer statutTicketId = Integer.valueOf(statutTicketIdStr);
+      ticketStream = ticketStream.filter(ticket -> statutTicketId.equals(ticket.getStatutTicketId()));
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException("statutTicketId invalide : " + statutTicketIdStr);
+    }
+  }
+
+  if (reference != null && !reference.isEmpty()) {
+    ticketStream = ticketStream.filter(ticket ->
+        ticket.getReference() != null &&
+        ticket.getReference().toLowerCase().contains(reference.toLowerCase()));
+  }
+
+  if (produitIdStr != null && !produitIdStr.isEmpty()) {
+    try {
+      Integer produitId = Integer.valueOf(produitIdStr);
+      ticketStream = ticketStream.filter(ticket ->
+          ticket.getProduitId() != null &&
+          ticket.getProduitId().equals(produitId));
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException("produitId invalide : " + produitIdStr);
+    }
+  }
+
+  if (dateDebut != null && !dateDebut.isEmpty()) {
+    LocalDate debut = LocalDate.parse(dateDebut);
+    ticketStream = ticketStream.filter(ticket -> {
+      if (ticket.getDateCreation() == null) return false;
+      return !ticket.getDateCreation().toLocalDate().isBefore(debut);
+    });
+  }
+
+  if (dateFin != null && !dateFin.isEmpty()) {
+    LocalDate fin = LocalDate.parse(dateFin);
+    ticketStream = ticketStream.filter(ticket -> {
+      if (ticket.getDateCreation() == null) return false;
+      return !ticket.getDateCreation().toLocalDate().isAfter(fin);
+    });
+  }
+
+  return ticketStream.count();
+}
+
 
   private void envoyerNotificationsCreation(Ticket t) {
     try {
