@@ -1,5 +1,9 @@
 package com.nrstudio.portail.dto;
 
+import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
+
 public class TicketCreationRequete {
     private Integer companyId;
     private Integer produitId;           // nullable
@@ -12,9 +16,25 @@ public class TicketCreationRequete {
     private boolean politiqueAcceptee;
     private Integer creeParUtilisateurId;
     private Integer affecteAUtilisateurId; // nullable
-
+    private Integer clientId;
+    private List<MultipartFile> fichiers;
     // Getters et Setters
 
+
+    public List<MultipartFile> getFichiers() { 
+        return fichiers; 
+    }
+    public void setFichiers(List<MultipartFile> fichiers) { 
+        this.fichiers = fichiers; 
+    }
+
+    public Integer getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(Integer clientId) {
+        this.clientId = clientId;
+    }
     public Integer getCompanyId() {
         return companyId;
     }

@@ -20,5 +20,11 @@ public class ProduitService {
     public List<Produit> listerProduitsActifs() {
         return produitsRepository.findByActif(true);
     }
+
+    //Produit par company
+    public List<Produit> listerProduitsParCompany(Integer companyId) {
+        // Implémentation à compléter selon la logique métier
+        return produitsRepository.findByActif(true);
+    }
 }
 

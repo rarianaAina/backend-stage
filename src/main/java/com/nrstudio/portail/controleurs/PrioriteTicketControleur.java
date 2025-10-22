@@ -15,9 +15,15 @@ public class PrioriteTicketControleur {
     @Autowired
     private PrioriteTicketRepository prioriteTicketRepository;
 
-    @GetMapping
+    @GetMapping(produces = "application/json")
     public List<PrioriteTicket> lister() {
-        prioriteTicketRepository.findAll();
+        List<PrioriteTicket> priorites = prioriteTicketRepository.findAll();
+        System.out.println("Liste des priorités de ticket: " + priorites.size() + " trouvées.");
+
+        for (PrioriteTicket p : priorites) {
+            System.out.println(p);
+        }
+
         return prioriteTicketRepository.findAll();
     }
 }
