@@ -2,6 +2,7 @@ package com.nrstudio.portail.controleurs;
 
 import com.nrstudio.portail.depots.TicketRepository;
 import com.nrstudio.portail.domaine.Ticket;
+import com.nrstudio.portail.dto.TicketAvecProduitPageReponse;
 import com.nrstudio.portail.dto.TicketCreationRequete;
 import com.nrstudio.portail.dto.TicketPageReponse;
 import com.nrstudio.portail.services.TicketService;
@@ -42,8 +43,40 @@ public class TicketControleur {
 
   //Ticket par utilisateur avec pagination
 
+  // @GetMapping("/utilisateur/{utilisateurId}/page/{page}/size/{size}")
+  // public TicketPageReponse listerParUtilisateurAvecPagination(
+  //     @PathVariable("utilisateurId") Integer utilisateurId,
+  //     @PathVariable("page") Integer page,
+  //     @PathVariable("size") Integer size,
+  //     @RequestParam(value = "etat", required = false) String etat,
+  //     @RequestParam(value = "reference", required = false) String reference,
+  //     @RequestParam(value = "produit", required = false) String produit,
+  //     @RequestParam(value = "dateDebut", required = false) String dateDebut,
+  //     @RequestParam(value = "dateFin", required = false) String dateFin) {
+
+  //   List<Ticket> tickets = service.listerTicketsUtilisateurAvecPaginationEtFiltres(
+  //       utilisateurId, page, size, etat, reference, produit, dateDebut, dateFin);
+
+  //   System.out.println(tickets.toString());
+  //   Long totalElements = service.countTicketsUtilisateurAvecFiltres(
+  //       utilisateurId, etat, reference, produit, dateDebut, dateFin);
+  //   int totalPages = (int) Math.ceil((double) totalElements / size);
+    
+  //   System.out.println("Total elements: " + totalElements);
+  //   System.out.println("Total pages: " + totalPages);
+
+  //   TicketPageReponse response = new TicketPageReponse();
+  //   response.setTickets(tickets);
+  //   response.setCurrentPage(page);
+  //   response.setTotalPages(totalPages);
+  //   response.setTotalElements(totalElements);
+  //   response.setPageSize(size);
+
+  //   return response;
+  // }
+
   @GetMapping("/utilisateur/{utilisateurId}/page/{page}/size/{size}")
-  public TicketPageReponse listerParUtilisateurAvecPagination(
+  public TicketAvecProduitPageReponse listerParUtilisateurAvecPagination(
       @PathVariable("utilisateurId") Integer utilisateurId,
       @PathVariable("page") Integer page,
       @PathVariable("size") Integer size,
@@ -53,25 +86,13 @@ public class TicketControleur {
       @RequestParam(value = "dateDebut", required = false) String dateDebut,
       @RequestParam(value = "dateFin", required = false) String dateFin) {
 
-    List<Ticket> tickets = service.listerTicketsUtilisateurAvecPaginationEtFiltres(
-        utilisateurId, page, size, etat, reference, produit, dateDebut, dateFin);
+      TicketAvecProduitPageReponse response = service.listerTicketsUtilisateurAvecPaginationEtFiltres(
+          utilisateurId, page, size, etat, reference, produit, dateDebut, dateFin);
 
-    System.out.println(tickets.toString());
-    Long totalElements = service.countTicketsUtilisateurAvecFiltres(
-        utilisateurId, etat, reference, produit, dateDebut, dateFin);
-    int totalPages = (int) Math.ceil((double) totalElements / size);
-    
-    System.out.println("Total elements: " + totalElements);
-    System.out.println("Total pages: " + totalPages);
+      System.out.println("Total elements: " + response.getTotalElements());
+      System.out.println("Total pages: " + response.getTotalPages());
 
-    TicketPageReponse response = new TicketPageReponse();
-    response.setTickets(tickets);
-    response.setCurrentPage(page);
-    response.setTotalPages(totalPages);
-    response.setTotalElements(totalElements);
-    response.setPageSize(size);
-
-    return response;
+      return response;
   }
 
   @GetMapping("/{id}")

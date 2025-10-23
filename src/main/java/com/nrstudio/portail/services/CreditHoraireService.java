@@ -31,41 +31,82 @@ public class CreditHoraireService {
   }
 
   public List<CreditHoraireDto> getCreditsParCompany(Integer companyId) {
-    List<CreditHoraire> credits = creditHoraireRepository
-      .findByCompanyIdAndActifTrueOrderByPeriodeFinDesc(companyId);
-    
-    return credits.stream()
-      .map(this::toDto)
-      .collect(Collectors.toList());
+    Company company = getCompany(companyId);
+    List<CreditHoraire> credits = creditHoraireRepository.findByCompanyAndActifTrueOrderByPeriodeFinDesc(company);
+    return credits.stream().map(this::toDto).collect(Collectors.toList());
   }
 
+  // public List<CreditHoraireDto> getCreditsParCompanyEtProduit(Integer companyId, Integer produitId) {
+  //   Company company = getCompany(companyId);
+  //   Produit produit = getProduit(produitId);
+  //   List<CreditHoraire> credits = creditHoraireRepository.findByCompanyAndProduitAndActifTrueOrderByPeriodeFinDesc(company, produit);
+  //   return credits.stream().map(this::toDto).collect(Collectors.toList());
+  // }
+
+  public List<CreditHoraireDto> getCreditsParCompanyEtProduit(Integer companyId, Integer produitIdExterne) {
+    Company company = getCompany(companyId);
+    
+    // Chercher le produit par son idExterneCrm
+    Produit produit = produitRepository.findByIdExterneCrm(String.valueOf(produitIdExterne))
+        .orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'ID externe: " + produitIdExterne));
+    
+    List<CreditHoraire> credits = creditHoraireRepository.findByCompanyAndProduitAndActifTrueOrderByPeriodeFinDesc(company, produit);
+    return credits.stream().map(this::toDto).collect(Collectors.toList());
+  }
   public List<CreditHoraireDto> getCreditsActifs(Integer companyId) {
     LocalDate today = LocalDate.now();
-    List<CreditHoraire> credits = creditHoraireRepository
-      .findCreditsActifsADate(companyId, today);
-    
-    return credits.stream()
-      .map(this::toDto)
-      .collect(Collectors.toList());
+    Company company = getCompany(companyId);
+    List<CreditHoraire> credits = creditHoraireRepository.findCreditsActifsADate(company, today);
+    return credits.stream().map(this::toDto).collect(Collectors.toList());
+  }
+
+  public List<CreditHoraireDto> getCreditsActifsPourProduit(Integer companyId, Integer produitId) {
+    LocalDate today = LocalDate.now();
+    Company company = getCompany(companyId);
+    Produit produit = getProduit(produitId);
+    List<CreditHoraire> credits = creditHoraireRepository.findCreditsActifsPourProduitADate(company, produit, today);
+    return credits.stream().map(this::toDto).collect(Collectors.toList());
   }
 
   public CreditHoraire consommerHeures(Integer companyId, Integer produitId, Integer heures) {
+    if (heures <= 0) {
+      throw new RuntimeException("Le nombre d'heures doit être positif");
+    }
+
     LocalDate today = LocalDate.now();
+    Company company = getCompany(companyId);
+    Produit produit = getProduit(produitId);
+
+    // Trouver le premier crédit actif avec des heures restantes
     CreditHoraire credit = creditHoraireRepository
-      .findCreditActifPourProduit(companyId, produitId, today)
-      .orElseThrow(() -> new RuntimeException("Aucun crédit horaire actif trouvé"));
+      .findPremierCreditActifPourProduit(company, produit, today)
+      .orElseThrow(() -> new RuntimeException(
+        String.format("Aucun crédit horaire actif avec des heures disponibles trouvé pour le produit: %s", produit.getLibelle())
+      ));
 
     if (credit.getHeuresRestantes() < heures) {
-      throw new RuntimeException("Crédit horaire insuffisant");
+      throw new RuntimeException(String.format(
+        "Crédit horaire insuffisant pour le produit %s. Restant: %d heures, Demandé: %d heures",
+        produit.getLibelle(), credit.getHeuresRestantes(), heures
+      ));
     }
 
     credit.setHeuresConsommees(credit.getHeuresConsommees() + heures);
     return creditHoraireRepository.save(credit);
   }
 
+  public Integer getHeuresRestantesPourProduit(Integer companyId, Integer produitId) {
+    LocalDate today = LocalDate.now();
+    Company company = getCompany(companyId);
+    Produit produit = getProduit(produitId);
+    Integer total = creditHoraireRepository.sumHeuresRestantesPourProduit(company, produit, today);
+    return total != null ? total : 0;
+  }
+
   public Integer getHeuresRestantesTotal(Integer companyId) {
     LocalDate today = LocalDate.now();
-    Integer total = creditHoraireRepository.sumHeuresRestantesActives(companyId, today);
+    Company company = getCompany(companyId);
+    Integer total = creditHoraireRepository.sumHeuresRestantesActives(company, today);
     return total != null ? total : 0;
   }
 
@@ -79,18 +120,23 @@ public class CreditHoraireService {
     });
   }
 
+  // Méthodes utilitaires
+  private Company getCompany(Integer companyId) {
+    return companyRepository.findById(companyId)
+        .orElseThrow(() -> new RuntimeException("Company non trouvée avec l'ID: " + companyId));
+  }
+
+  private Produit getProduit(Integer produitId) {
+    return produitRepository.findById(produitId)
+        .orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'ID: " + produitId));
+  }
+
   private CreditHoraireDto toDto(CreditHoraire credit) {
     CreditHoraireDto dto = new CreditHoraireDto();
     dto.setId(credit.getId());
-    
-    Company company = companyRepository.findById(credit.getCompanyId()).orElse(null);
-    dto.setNomCompany(company != null ? company.getNom() : "");
-    
-    if (credit.getProduitId() != null) {
-      Produit produit = produitRepository.findById(credit.getProduitId()).orElse(null);
-      dto.setNomProduit(produit != null ? produit.getLibelle() : "");
-    }
-    
+    dto.setNomCompany(credit.getCompany() != null ? credit.getCompany().getNom() : "");
+    dto.setNomProduit(credit.getProduit() != null ? credit.getProduit().getLibelle() : "");
+    dto.setProduitId(credit.getProduit() != null ? credit.getProduit().getId() : null);
     dto.setPeriodeDebut(credit.getPeriodeDebut());
     dto.setPeriodeFin(credit.getPeriodeFin());
     dto.setHeuresAllouees(credit.getHeuresAllouees());
@@ -103,7 +149,7 @@ public class CreditHoraireService {
     dto.setPourcentageUtilisation(Math.round(pourcentage * 100.0) / 100.0);
     
     dto.setActif(credit.isActif());
-    dto.setExpire(credit.getPeriodeFin().isBefore(LocalDate.now()));
+    dto.setExpire(credit.getPeriodeFin() != null && credit.getPeriodeFin().isBefore(LocalDate.now()));
     
     return dto;
   }

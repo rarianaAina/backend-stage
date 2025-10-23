@@ -12,66 +12,56 @@ import java.time.LocalDateTime;
 @Setter
 public class CreditHoraire {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Integer id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-  @Column(name = "company_id", nullable = false)
-  private Integer companyId;
+    // CORRECTION : Une seule colonne pour company_id avec relation
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "company_id", insertable = false, updatable = false)
-  private Company company;
+    // CORRECTION : Une seule colonne pour produit_id avec relation
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "produit_id")
+    private Produit produit;
 
-  @Column(name = "produit_id")
-  private Integer produitId;
+    @Column(name = "periode_debut", nullable = false)
+    private LocalDate periodeDebut;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "produit_id", insertable = false, updatable = false)
-  private Produit produit;
+    @Column(name = "periode_fin")
+    private LocalDate periodeFin;
 
-  @Column(name = "periode_debut", nullable = false)
-  private LocalDate periodeDebut;
+    @Column(name = "heures_allouees", nullable = false)
+    private Integer heuresAllouees;
 
-  @Column(name = "periode_fin", nullable = false)
-  private LocalDate periodeFin;
+    @Column(name = "heures_consommees", nullable = false)
+    private Integer heuresConsommees = 0;
 
-  @Column(name = "heures_allouees", nullable = false)
-  private Integer heuresAllouees;
+    @Column(name = "heures_restantes", nullable = false)
+    private Integer heuresRestantes;
 
-  @Column(name = "heures_consommees", nullable = false)
-  private Integer heuresConsommees = 0;
+    @Column(nullable = false)
+    private boolean actif = true;
 
-  @Column(name = "heures_restantes", nullable = false)
-  private Integer heuresRestantes;
+    @Column(name = "date_creation", nullable = false)
+    private LocalDateTime dateCreation;
 
-  @Column(nullable = false)
-  private boolean actif = true;
+    @Column(name = "date_mise_a_jour", nullable = false)
+    private LocalDateTime dateMiseAJour;
 
-  @Column(name = "renouvelable")
-  private Boolean renouvelable = false;
+    // @PrePersist
+    // protected void onCreate() {
+    //     dateCreation = LocalDateTime.now();
+    //     dateMiseAJour = LocalDateTime.now();
+    //     if (heuresRestantes == null) {
+    //         heuresRestantes = heuresAllouees - heuresConsommees;
+    //     }
+    // }
 
-  @Column(length = 1000)
-  private String remarques;
-
-  @Column(name = "date_creation", nullable = false)
-  private LocalDateTime dateCreation;
-
-  @Column(name = "date_mise_a_jour", nullable = false)
-  private LocalDateTime dateMiseAJour;
-
-  @PrePersist
-  protected void onCreate() {
-    dateCreation = LocalDateTime.now();
-    dateMiseAJour = LocalDateTime.now();
-    if (heuresRestantes == null) {
-      heuresRestantes = heuresAllouees - heuresConsommees;
+    @PreUpdate
+    protected void onUpdate() {
+        dateMiseAJour = LocalDateTime.now();
+        heuresRestantes = heuresAllouees - heuresConsommees;
     }
-  }
-
-  @PreUpdate
-  protected void onUpdate() {
-    dateMiseAJour = LocalDateTime.now();
-    heuresRestantes = heuresAllouees - heuresConsommees;
-  }
 }
