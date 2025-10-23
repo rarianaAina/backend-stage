@@ -134,6 +134,28 @@ CREATE TABLE dbo.company_produit (
     CONSTRAINT FK_company_produit_produit FOREIGN KEY (produit_id) REFERENCES dbo.produit(id)
 );
 
+/* Crédits horaires (forfaits de support) */
+CREATE TABLE dbo.credit_horaire (
+    id                      INT IDENTITY(1,1) PRIMARY KEY,
+    company_id              INT NOT NULL,
+    produit_id              INT NULL,                      -- si lié à un produit spécifique
+    periode_debut           DATE NOT NULL,
+    periode_fin             DATE NOT NULL,
+    heures_allouees         INT NOT NULL CHECK (heures_allouees >= 0),
+    heures_consommees       INT NOT NULL DEFAULT(0) CHECK (heures_consommees >= 0),
+    heures_restantes        INT NOT NULL CHECK (heures_restantes >= 0),
+    actif                   BIT NOT NULL DEFAULT(1),
+    renouvelable            BIT NOT NULL DEFAULT(0),
+    remarques               NVARCHAR(1000) NULL,
+    date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+    date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
+    CONSTRAINT FK_credit_horaire_company FOREIGN KEY (company_id) REFERENCES dbo.company(id),
+    CONSTRAINT FK_credit_horaire_produit FOREIGN KEY (produit_id) REFERENCES dbo.produit(id)
+);
+
+CREATE INDEX IX_credit_horaire_company ON dbo.credit_horaire(company_id, actif);
+CREATE INDEX IX_credit_horaire_periode ON dbo.credit_horaire(periode_debut, periode_fin);
+
 /* =========================================================
    Utilisateurs & roles
 ========================================================= */
