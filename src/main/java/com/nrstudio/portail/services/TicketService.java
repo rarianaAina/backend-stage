@@ -1,11 +1,15 @@
 package com.nrstudio.portail.services;
 
 import com.nrstudio.portail.depots.CompanyRepository;
+import com.nrstudio.portail.depots.ProduitRepository;
 import com.nrstudio.portail.depots.TicketRepository;
 import com.nrstudio.portail.depots.UtilisateurRepository;
 import com.nrstudio.portail.domaine.Company;
+import com.nrstudio.portail.domaine.Produit;
 import com.nrstudio.portail.domaine.Ticket;
 import com.nrstudio.portail.domaine.Utilisateur;
+import com.nrstudio.portail.dto.TicketAvecProduitDto;
+import com.nrstudio.portail.dto.TicketAvecProduitPageReponse;
 import com.nrstudio.portail.dto.TicketCreationRequete;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @Service
@@ -26,32 +31,56 @@ public class TicketService {
   private final WhatsAppNotificationService whatsAppService;
   private final CompanyRepository companies;
   private final UtilisateurRepository utilisateurs;
+  private final ProduitRepository produitRepository;
+  
 
   public TicketService(TicketRepository tickets,
                        @Qualifier("crmJdbc") JdbcTemplate crmJdbc,
                        EmailNotificationService emailService,
                        WhatsAppNotificationService whatsAppService,
                        CompanyRepository companies,
-                       UtilisateurRepository utilisateurs) {
+                       UtilisateurRepository utilisateurs,
+                       ProduitRepository produitRepository) {
     this.tickets = tickets;
     this.crmJdbc = crmJdbc;
     this.emailService = emailService;
     this.whatsAppService = whatsAppService;
     this.companies = companies;
     this.utilisateurs = utilisateurs;
+    this.produitRepository = produitRepository;
   }
 
-  @Transactional
-  public Ticket creerEtSynchroniser(TicketCreationRequete r) {
+@Transactional
+public Ticket creerEtSynchroniser(TicketCreationRequete r) {
 
-    // if (!r.isPolitiqueAcceptee()) {
-    //   throw new IllegalArgumentException("Les politiques doivent être acceptées.");
-    // }
+    // Pour le produit
+    String produitIdExterneCrm = String.valueOf(r.getProduitId());
+    Optional<Produit> produitOpt = produitRepository.findByIdExterneCrm(produitIdExterneCrm);
+    
+    Integer produitIdLocal;
+    if (produitOpt.isPresent()) {
+        produitIdLocal = produitOpt.get().getId();
+    } else {
+        throw new IllegalArgumentException("Produit introuvable pour idExterneCrm: " + produitIdExterneCrm);
+    }
 
-    // 1) Créer dans PORTAIL_CLIENT
+    // Pour le client - récupérer l'idExterneCrm à partir de l'ID local
+    Integer clientIdLocal = r.getClientId();
+    Optional<Utilisateur> utilisateurOpt = utilisateurs.findById(clientIdLocal); // Chercher par ID local
+    
+    String clientIdExterne;
+    if (utilisateurOpt.isPresent()) {
+        clientIdExterne = utilisateurOpt.get().getIdExterneCrm();
+        // Si vous voulez un Integer, convertissez-le
+        // clientIdExterne = Integer.valueOf(utilisateurOpt.get().getIdExterneCrm());
+    } else {
+        throw new IllegalArgumentException("Utilisateur introuvable pour id: " + clientIdLocal);
+    }
+
     Ticket t = new Ticket();
     t.setCompanyId(r.getCompanyId());
-    t.setProduitId(r.getProduitId());
+    t.setClientId(Integer.valueOf(clientIdExterne)); // ou Integer.valueOf(clientIdExterne) si besoin
+    t.setProduitId(produitIdLocal);
     t.setTypeTicketId(r.getTypeTicketId());
     t.setPrioriteTicketId(r.getPrioriteTicketId());
     t.setStatutTicketId(1);
@@ -64,7 +93,6 @@ public class TicketService {
     t.setDateCreation(LocalDateTime.now());
     t.setDateMiseAJour(LocalDateTime.now());
 
-    // référence lisible côté portail
     t.setReference("TCK-" + System.currentTimeMillis());
     t = tickets.save(t);
 
@@ -98,8 +126,7 @@ public class TicketService {
     // envoyerNotificationsCreation(t);
 
     return t;
-  }
-
+}
   @Transactional
   public Ticket changerStatut(Integer ticketId, Integer nouveauStatutId, Integer utilisateurId) {
     Ticket t = tickets.findById(ticketId)
@@ -174,7 +201,73 @@ public class TicketService {
   }
 
   //Ticket par utilisateur avec pagination et filtres
-  public List<Ticket> listerTicketsUtilisateurAvecPaginationEtFiltres(
+  // public List<Ticket> listerTicketsUtilisateurAvecPaginationEtFiltres(
+  //   Integer utilisateurId,
+  //   int page,
+  //   int size,
+  //   String statutTicketIdStr,
+  //   String reference,
+  //   String produitIdStr,
+  //   String dateDebut,
+  //   String dateFin) {
+
+  //   Utilisateur utilisateur = utilisateurs.findById(utilisateurId)
+  //       .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+  //   Integer utilisateurIdClient = utilisateur.getIdExterneCrm() != null ? Integer.valueOf(utilisateur.getIdExterneCrm()) : null;
+
+  //   Stream<Ticket> ticketStream = tickets.findAll().stream()
+  //       .filter(ticket -> utilisateurIdClient.equals(ticket.getClientId()));
+
+  //   // Filtres
+  //   if (statutTicketIdStr != null && !statutTicketIdStr.isEmpty()) {
+  //     try {
+  //       Integer statutTicketId = Integer.valueOf(statutTicketIdStr);
+  //       ticketStream = ticketStream.filter(ticket -> statutTicketId.equals(ticket.getStatutTicketId()));
+  //     } catch (NumberFormatException e) {
+  //       throw new IllegalArgumentException("statutTicketId invalide : " + statutTicketIdStr);
+  //     }
+  //   }
+
+  //   if (reference != null && !reference.isEmpty()) {
+  //     ticketStream = ticketStream.filter(ticket -> 
+  //         ticket.getReference() != null &&
+  //         ticket.getReference().toLowerCase().contains(reference.toLowerCase()));
+  //   }
+
+  //   if (produitIdStr != null && !produitIdStr.isEmpty()) {
+  //     try {
+  //       Integer produitId = Integer.valueOf(produitIdStr);
+  //       ticketStream = ticketStream.filter(ticket -> 
+  //           ticket.getProduitId() != null &&
+  //           ticket.getProduitId().equals(produitId));
+  //     } catch (NumberFormatException e) {
+  //       throw new IllegalArgumentException("produitId invalide : " + produitIdStr);
+  //     }
+  //   }
+
+  //   if (dateDebut != null && !dateDebut.isEmpty()) {
+  //     LocalDate debut = LocalDate.parse(dateDebut);
+  //     ticketStream = ticketStream.filter(ticket -> {
+  //       if (ticket.getDateCreation() == null) return false;
+  //       return !ticket.getDateCreation().toLocalDate().isBefore(debut);
+  //     });
+  //   }
+
+  //   if (dateFin != null && !dateFin.isEmpty()) {
+  //     LocalDate fin = LocalDate.parse(dateFin);
+  //     ticketStream = ticketStream.filter(ticket -> {
+  //       if (ticket.getDateCreation() == null) return false;
+  //       return !ticket.getDateCreation().toLocalDate().isAfter(fin);
+  //     });
+  //   }
+
+  //   return ticketStream
+  //       .skip(page * size)
+  //       .limit(size)
+  //       .toList();
+  // }
+
+  public TicketAvecProduitPageReponse listerTicketsUtilisateurAvecPaginationEtFiltres(
     Integer utilisateurId,
     int page,
     int size,
@@ -191,7 +284,7 @@ public class TicketService {
     Stream<Ticket> ticketStream = tickets.findAll().stream()
         .filter(ticket -> utilisateurIdClient.equals(ticket.getClientId()));
 
-    // Filtres
+    // Filtres existants
     if (statutTicketIdStr != null && !statutTicketIdStr.isEmpty()) {
       try {
         Integer statutTicketId = Integer.valueOf(statutTicketIdStr);
@@ -234,12 +327,44 @@ public class TicketService {
       });
     }
 
-    return ticketStream
+    // Convertir les tickets en DTOs avec les noms de produits
+    List<TicketAvecProduitDto> ticketDtos = ticketStream
         .skip(page * size)
         .limit(size)
+        .map(ticket -> convertirEnAvecProduitDto(ticket))
         .toList();
-  }
 
+    long totalElements = countTicketsUtilisateurAvecFiltres(utilisateurId, statutTicketIdStr, reference, produitIdStr, dateDebut, dateFin);
+    int totalPages = (int) Math.ceil((double) totalElements / size);
+
+    return new TicketAvecProduitPageReponse(ticketDtos, page, totalPages, totalElements, size);
+}
+
+// Méthode utilitaire pour convertir Ticket en TicketAvecProduitDto
+private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
+    TicketAvecProduitDto dto = new TicketAvecProduitDto();
+    dto.setId(ticket.getId().toString());
+    dto.setReference(ticket.getReference());
+    dto.setProduitId(ticket.getProduitId());
+    dto.setDescription(ticket.getDescription());
+    dto.setPrioriteTicketId(ticket.getPrioriteTicketId().toString());
+    dto.setDateCreation(ticket.getDateCreation());
+    dto.setDateCloture(ticket.getDateCloture());
+    dto.setEtat(ticket.getStatutTicketId().toString()); // Adaptez selon votre logique d'état
+    
+    // Récupérer le nom du produit
+    String produitNom = "Produit inconnu";
+    if (ticket.getProduitId() != null) {
+        Optional<Produit> produit = produitRepository.findById(ticket.getProduitId());
+        if (produit.isPresent()) {
+            // Adaptez selon le champ qui contient le nom dans votre entité Produit
+            produitNom = produit.get().getCodeProduit(); // ou getLibelle(), getDescription(), etc.
+        }
+    }
+    dto.setProduitNom(produitNom);
+    
+    return dto;
+}
   // Méthode pour obtenir le nombre total de tickets (pour la pagination)
   public long countTicketsUtilisateurAvecFiltres(
     Integer utilisateurId,
