@@ -1,5 +1,6 @@
 package com.nrstudio.portail.controleurs;
 
+import com.nrstudio.portail.depots.ProduitRepository;
 import com.nrstudio.portail.dto.CreditHoraireDto;
 import com.nrstudio.portail.services.CreditHoraireService;
 import org.springframework.http.ResponseEntity;
@@ -13,9 +14,11 @@ import java.util.Map;
 public class CreditHoraireControleur {
 
     private final CreditHoraireService creditHoraireService;
+    private final ProduitRepository produitRepository;
 
-    public CreditHoraireControleur(CreditHoraireService creditHoraireService) {
+    public CreditHoraireControleur(CreditHoraireService creditHoraireService, ProduitRepository produitRepository) {
         this.creditHoraireService = creditHoraireService;
+        this.produitRepository = produitRepository;
     }
 
     /**
@@ -49,11 +52,16 @@ public class CreditHoraireControleur {
 
     @GetMapping("/company/{companyId}/produit/{produitIdExterne}")
     public ResponseEntity<List<CreditHoraireDto>> getCreditsParCompanyEtProduit(
-            @PathVariable Integer companyId,
-            @PathVariable Integer produitIdExterne) {  // Renommez pour clarifier
+            @PathVariable("companyId") Integer companyId,
+            @PathVariable("produitIdExterne") Integer produitIdExterne) {  // Renommez pour clarifier
+        // trouver l'id interne via l'idexterne à l'aide du produitrepository mais pas du service
+        Integer idProduitInterne = produitRepository.findByIdExterneCrm(String.valueOf(produitIdExterne))
+            .orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'ID externe: " + produitIdExterne))
+            .getId();
         
+
         try {
-            List<CreditHoraireDto> credits = creditHoraireService.getCreditsParCompanyEtProduit(companyId, produitIdExterne);
+            List<CreditHoraireDto> credits = creditHoraireService.getCreditsParCompanyEtProduit(companyId, idProduitInterne);
             return ResponseEntity.ok(credits);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(null);
