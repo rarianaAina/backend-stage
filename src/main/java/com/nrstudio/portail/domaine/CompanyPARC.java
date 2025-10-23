@@ -1,5 +1,7 @@
 package com.nrstudio.portail.domaine;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -22,7 +24,18 @@ public class CompanyPARC {
     @Column(name = "comp_name")
     private String compName;
 
+    @Column(name = "date_obtention")
+    private LocalDateTime dateObtention;
+
     // Getters and Setters
+
+    public LocalDateTime getDateObtention() {
+        return dateObtention;
+    }
+
+    public void setDateObtention(LocalDateTime dateObtention) {
+        this.dateObtention = dateObtention;
+    }
     public Integer getParcId() {
         return parcId;
     }

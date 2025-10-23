@@ -143,10 +143,9 @@ CREATE TABLE dbo.credit_horaire (
     periode_fin             DATE NOT NULL,
     heures_allouees         INT NOT NULL CHECK (heures_allouees >= 0),
     heures_consommees       INT NOT NULL DEFAULT(0) CHECK (heures_consommees >= 0),
-    heures_restantes        INT NOT NULL CHECK (heures_restantes >= 0),
+    heures_restantes        INT NOT NULL,
     actif                   BIT NOT NULL DEFAULT(1),
-    renouvelable            BIT NOT NULL DEFAULT(0),
-    remarques               NVARCHAR(1000) NULL,
+    reporte            BIT NOT NULL DEFAULT(0),
     date_creation           DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
     date_mise_a_jour        DATETIME2(0) NOT NULL DEFAULT(SYSDATETIME()),
     CONSTRAINT FK_credit_horaire_company FOREIGN KEY (company_id) REFERENCES dbo.company(id),
@@ -459,7 +458,8 @@ CREATE TABLE dbo.CompanyPARC (
     parc_name NVARCHAR(255),                   -- champ pour `parcName`
     parc_companyid INT,                        -- champ pour `parcCompanyId`
     comp_companyid INT,                        -- champ pour `compCompanyId`
-    comp_name NVARCHAR(255)                    -- champ pour `compName`
+    comp_name NVARCHAR(255),                   -- champ pour `compName`
+    date_obtention DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
 );
 
 /* =========================================================

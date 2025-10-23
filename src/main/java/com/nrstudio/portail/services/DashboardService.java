@@ -3,6 +3,9 @@ package com.nrstudio.portail.services;
 import com.nrstudio.portail.depots.*;
 import com.nrstudio.portail.domaine.*;
 import com.nrstudio.portail.dto.*;
+
+import lombok.ToString;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,31 +39,63 @@ public class DashboardService {
     this.creditHoraireService = creditHoraireService;
   }
 
-  public DashboardClientDto getDashboardClient(Integer userId) {
-    Utilisateur utilisateur = utilisateurRepository.findById(userId)
-      .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+  // public DashboardClientDto getDashboardClient(Integer userId) {
+  //   Utilisateur utilisateur = utilisateurRepository.findById(userId)
+  //     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-    Integer companyId = getCompanyIdForUser(userId);
-    if (companyId == null) {
-      throw new RuntimeException("Company non trouvée pour cet utilisateur");
-    }
+  //   Integer companyId = getCompanyIdForUser(userId);
+  //   if (companyId == null) {
+  //     throw new RuntimeException("Company non trouvée pour cet utilisateur");
+  //   }
 
-    DashboardClientDto dashboard = new DashboardClientDto();
+  //   DashboardClientDto dashboard = new DashboardClientDto();
     
-    List<Ticket> tickets = ticketRepository.findByCompanyId(companyId);
+  //   List<Ticket> tickets = ticketRepository.findByCompanyId(companyId);
     
-    dashboard.setStatistiquesTickets(calculerStatistiquesTickets(tickets));
-    dashboard.setCreditsHoraires(creditHoraireService.getCreditsActifs(companyId));
-    dashboard.setTicketsRecents(getTicketsRecents(tickets, 10));
-    dashboard.setInterventionsProchaines(getInterventionsProchaines(companyId, 10));
-    dashboard.setTicketsParStatut(repartitionParStatut(tickets));
-    dashboard.setTicketsParPriorite(repartitionParPriorite(tickets));
-    dashboard.setTicketsParProduit(repartitionParProduit(tickets));
-    dashboard.setDureesMoyennes(calculerDureesTraitement(tickets));
+  //   dashboard.setStatistiquesTickets(calculerStatistiquesTickets(tickets));
+  //   dashboard.setCreditsHoraires(creditHoraireService.getCreditsActifs(companyId));
+  //   dashboard.setTicketsRecents(getTicketsRecents(tickets, 10));
+  //   dashboard.setInterventionsProchaines(getInterventionsProchaines(companyId, 10));
+  //   dashboard.setTicketsParStatut(repartitionParStatut(tickets));
+  //   dashboard.setTicketsParPriorite(repartitionParPriorite(tickets));
+  //   dashboard.setTicketsParProduit(repartitionParProduit(tickets));
+  //   dashboard.setDureesMoyennes(calculerDureesTraitement(tickets));
 
-    return dashboard;
+  //   return dashboard;
+  // }
+
+    public DashboardClientDto getDashboardClient(Integer userId) {
+      Utilisateur utilisateur = utilisateurRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+      // Récupérer l'idExterneCrm depuis l'utilisateur
+      String idExterneCrm = utilisateur.getIdExterneCrm();
+      
+      if (idExterneCrm == null) {
+          throw new RuntimeException("Aucun idExterneCrm trouvé pour cet utilisateur");
+      }
+
+      // Utiliser idExterneCrm pour trouver la company
+      Integer companyId = getCompanyIdForUser(idExterneCrm);
+      if (companyId == null) {
+        throw new RuntimeException("Company non trouvée pour cet utilisateur (idExterneCrm: " + idExterneCrm + ")");
+      }
+
+      DashboardClientDto dashboard = new DashboardClientDto();
+      
+      List<Ticket> tickets = ticketRepository.findByCompanyId(companyId);
+      
+      dashboard.setStatistiquesTickets(calculerStatistiquesTickets(tickets));
+      dashboard.setCreditsHoraires(creditHoraireService.getCreditsActifs(companyId));
+      dashboard.setTicketsRecents(getTicketsRecents(tickets, 10));
+      dashboard.setInterventionsProchaines(getInterventionsProchaines(companyId, 10));
+      dashboard.setTicketsParStatut(repartitionParStatut(tickets));
+      dashboard.setTicketsParPriorite(repartitionParPriorite(tickets));
+      dashboard.setTicketsParProduit(repartitionParProduit(tickets));
+      dashboard.setDureesMoyennes(calculerDureesTraitement(tickets));
+
+      return dashboard;
   }
-
   public DashboardAdminDto getDashboardAdmin() {
     DashboardAdminDto dashboard = new DashboardAdminDto();
     
@@ -79,7 +114,7 @@ public class DashboardService {
   }
 
   public ChartDataDto getChartDataClient(Integer userId) {
-    Integer companyId = getCompanyIdForUser(userId);
+    Integer companyId = getCompanyIdForUser(userId.toString());
     List<Ticket> tickets = ticketRepository.findByCompanyId(companyId);
     
     return buildChartData(tickets);
@@ -143,17 +178,45 @@ public class DashboardService {
     return repartition;
   }
 
+  // private Map<String, Integer> repartitionParProduit(List<Ticket> tickets) {
+  //   return tickets.stream()
+  //     .filter(t -> t.getProduitId() != null)
+  //     .collect(Collectors.groupingBy(
+  //       t -> {
+  //         Produit p = produitRepository.findById(t.getProduitId()).orElse(null);
+  //         return p != null ? p.getLibelle() : "Non spécifié";
+  //       },
+  //       Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
+  //     ));
+  // }
+
   private Map<String, Integer> repartitionParProduit(List<Ticket> tickets) {
+    System.out.println("=== DEBUG repartitionParProduit ===");
+    System.out.println("Nombre de tickets: " + tickets.size());
+    
+    for (Ticket ticket : tickets) {
+        System.out.println("Ticket ID: " + ticket.getId() + ", Produit ID: " + ticket.getProduitId());
+        if (ticket.getProduitId() != null) {
+            Produit p = produitRepository.findById(ticket.getProduitId()).orElse(null);
+            System.out.println("Produit trouvé: " + (p != null ? p.getLibelle() : "NULL"));
+        }
+    }
+    
+    // Puis la version sécurisée
     return tickets.stream()
-      .filter(t -> t.getProduitId() != null)
-      .collect(Collectors.groupingBy(
-        t -> {
-          Produit p = produitRepository.findById(t.getProduitId()).orElse(null);
-          return p != null ? p.getLibelle() : "Non spécifié";
-        },
-        Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
-      ));
-  }
+        .collect(Collectors.groupingBy(
+            t -> {
+                String libelle = "Non spécifié";
+                if (t.getProduitId() != null) {
+                    Produit p = produitRepository.findById(t.getProduitId()).orElse(null);
+                    libelle = p != null ? p.getLibelle() : "Produit non trouvé";
+                }
+                // S'assurer que le libellé n'est jamais null
+                return libelle != null ? libelle : "Libellé null";
+            },
+            Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
+        ));
+}
 
   private Map<String, Integer> repartitionParCompany(List<Ticket> tickets) {
     return tickets.stream()
@@ -336,13 +399,18 @@ public class DashboardService {
     return chartData;
   }
 
-  private Integer getCompanyIdForUser(Integer userId) {
-    Utilisateur utilisateur = utilisateurRepository.findById(userId).orElse(null);
-    if (utilisateur == null) return null;
+  // private Integer getCompanyIdForUser(Integer userId) {
+  //   Utilisateur utilisateur = utilisateurRepository.findById(userId).orElse(null);
+  //   if (utilisateur == null) return null;
     
-    // TODO: Implémenter la logique pour récupérer le companyId à partir de utilisateur_role
-    // Pour l'instant, retourner null ou une valeur par défaut
-    return null;
+  //   // TODO: Implémenter la logique pour récupérer le companyId à partir de utilisateur_role
+  //   // Pour l'instant, retourner null ou une valeur par défaut
+  //   return null;
+  // }
+  private Integer getCompanyIdForUser(String idExterneCrm) {
+    Utilisateur utilisateur = utilisateurRepository.findByIdExterneCrm(idExterneCrm).orElse(null);
+    if (utilisateur == null) return null;
+    return utilisateur.getCompanyId();
   }
 
   private String getStatutLabel(Integer statutId) {

@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface ProduitRepository extends JpaRepository<Produit, Integer> {
   Optional<Produit> findByIdExterneCrm(String idExterneCrm);
   List<Produit> findByActif(boolean actif);
-  Integer findIdByIdExterneCrm(Integer idExterneCrm);
+  //Integer findIdByIdExterneCrm(String idExterneCrm);
 }
 
 

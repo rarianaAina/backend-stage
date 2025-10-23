@@ -10,6 +10,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreditHoraireDto {
   private Integer id;
+  private Integer companyId;
+  private Integer produitId;
   private String nomCompany;
   private String nomProduit;
   private LocalDate periodeDebut;
