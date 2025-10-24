@@ -11,6 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/creditsHoraires")
+@CrossOrigin
 public class CreditHoraireControleur {
 
     private final CreditHoraireService creditHoraireService;
@@ -55,13 +56,15 @@ public class CreditHoraireControleur {
             @PathVariable("companyId") Integer companyId,
             @PathVariable("produitIdExterne") Integer produitIdExterne) {  // Renommez pour clarifier
         // trouver l'id interne via l'idexterne à l'aide du produitrepository mais pas du service
+
         Integer idProduitInterne = produitRepository.findByIdExterneCrm(String.valueOf(produitIdExterne))
             .orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'ID externe: " + produitIdExterne))
             .getId();
-        
-
+        System.out.println("Mapping produitIdExterne " + produitIdExterne + " to produitIdInterne " + idProduitInterne);
         try {
             List<CreditHoraireDto> credits = creditHoraireService.getCreditsParCompanyEtProduit(companyId, idProduitInterne);
+            System.out.println(credits.size() + " crédits trouvés pour companyId " + companyId);
+            System.out.println("Credits: " + credits);
             return ResponseEntity.ok(credits);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(null);
