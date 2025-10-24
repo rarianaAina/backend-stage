@@ -123,7 +123,7 @@ public Ticket creerEtSynchroniser(TicketCreationRequete r) {
     //   t = tickets.save(t);
     // }
 
-    // envoyerNotificationsCreation(t);
+    envoyerNotificationsCreation(t);
 
     return t;
 }
@@ -429,8 +429,12 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
 
 
   private void envoyerNotificationsCreation(Ticket t) {
+      Integer clientId = t.getClientId();
+      System.out.println("Client ID: " + clientId);
     try {
-      Utilisateur createur = utilisateurs.findById(t.getCreeParUtilisateurId()).orElse(null);
+      Utilisateur createur = utilisateurs.findByIdExterneCrm(t.getClientId().toString()).orElse(null);
+
+      System.out.println(createur.getEmail());
       if (createur != null && createur.getEmail() != null) {
         emailService.envoyerNotificationTicketCree(
           createur.getEmail(),
@@ -438,25 +442,25 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
           t.getTitre()
         );
 
-        if (createur.getTelephone() != null) {
-          whatsAppService.envoyerNotificationTicketCree(
-            createur.getTelephone(),
-            t.getReference(),
-            t.getTitre()
-          );
-        }
+        // if (createur.getTelephone() != null) {
+        //   whatsAppService.envoyerNotificationTicketCree(
+        //     createur.getTelephone(),
+        //     t.getReference(),
+        //     t.getTitre()
+        //   );
+        // }
       }
 
-      if (t.getAffecteAUtilisateurId() != null) {
-        Utilisateur consultant = utilisateurs.findById(t.getAffecteAUtilisateurId()).orElse(null);
-        if (consultant != null && consultant.getEmail() != null) {
-          emailService.envoyerNotificationTicketCree(
-            consultant.getEmail(),
-            t.getReference(),
-            t.getTitre()
-          );
-        }
-      }
+      // if (t.getAffecteAUtilisateurId() != null) {
+      //   Utilisateur consultant = utilisateurs.findById(t.getAffecteAUtilisateurId()).orElse(null);
+      //   if (consultant != null && consultant.getEmail() != null) {
+      //     emailService.envoyerNotificationTicketCree(
+      //       consultant.getEmail(),
+      //       t.getReference(),
+      //       t.getTitre()
+      //     );
+      //   }
+      // }
     } catch (Exception e) {
       System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
     }

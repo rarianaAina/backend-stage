@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,23 +37,42 @@ public class CreditHoraireService {
     return credits.stream().map(this::toDto).collect(Collectors.toList());
   }
 
-  // public List<CreditHoraireDto> getCreditsParCompanyEtProduit(Integer companyId, Integer produitId) {
-  //   Company company = getCompany(companyId);
-  //   Produit produit = getProduit(produitId);
-  //   List<CreditHoraire> credits = creditHoraireRepository.findByCompanyAndProduitAndActifTrueOrderByPeriodeFinDesc(company, produit);
-  //   return credits.stream().map(this::toDto).collect(Collectors.toList());
-  // }
-
-  public List<CreditHoraireDto> getCreditsParCompanyEtProduit(Integer companyId, Integer produitIdExterne) {
+  public List<CreditHoraireDto> getCreditsParCompanyEtProduit(Integer companyId, Integer produitId) {
     Company company = getCompany(companyId);
-    
-    // Chercher le produit par son idExterneCrm
-    Produit produit = produitRepository.findByIdExterneCrm(String.valueOf(produitIdExterne))
-        .orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'ID externe: " + produitIdExterne));
-    
+    Produit produit = getProduit(produitId);
     List<CreditHoraire> credits = creditHoraireRepository.findByCompanyAndProduitAndActifTrueOrderByPeriodeFinDesc(company, produit);
     return credits.stream().map(this::toDto).collect(Collectors.toList());
   }
+
+// public List<CreditHoraireDto> getCreditsParCompanyEtProduit(Integer companyId, Integer produitIdExterne) {
+//     System.out.println("=== DÉBUT getCreditsParCompanyEtProduit ===");
+//     System.out.println("Company ID: " + companyId + ", Produit ID externe: " + produitIdExterne);
+    
+//     try {
+//         System.out.println("1. Recherche de la company...");
+//         Company company = getCompany(companyId);
+//         System.out.println("Company trouvée: " + company.getId());
+        
+//         System.out.println("2. Recherche du produit...");
+//         Produit produit = produitRepository.findByIdExterneCrm(String.valueOf(produitIdExterne))
+//             .orElseThrow(() -> {
+//                 System.err.println("PRODUIT NON TROUVÉ: " + produitIdExterne);
+//                 return new RuntimeException("Produit non trouvé avec l'ID externe: " + produitIdExterne);
+//             });
+//         System.out.println("Produit trouvé: " + produit.getLibelle());
+        
+//         System.out.println("3. Recherche des crédits horaires...");
+//         List<CreditHoraire> credits = creditHoraireRepository.findByCompanyAndProduitAndActifTrueOrderByPeriodeFinDesc(company, produit);
+//         System.out.println("4. " + credits.size() + " crédits trouvés");
+        
+//         return credits.stream().map(this::toDto).collect(Collectors.toList());
+//     } catch (Exception e) {
+//         System.err.println("ERREUR: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+//         e.printStackTrace();
+//         return Collections.emptyList(); // ou throw selon votre besoin
+//     }
+// }
+
   public List<CreditHoraireDto> getCreditsActifs(Integer companyId) {
     LocalDate today = LocalDate.now();
     Company company = getCompany(companyId);

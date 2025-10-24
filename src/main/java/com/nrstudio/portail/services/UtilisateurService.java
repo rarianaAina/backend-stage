@@ -28,6 +28,9 @@ public class UtilisateurService {
     u.setPrenom(r.getPrenom());
     u.setEmail(r.getEmail());
     u.setActif(Boolean.TRUE.equals(r.getActif()));
+    //Date de création aujourd'hui
+    u.setDateCreation(r.getDateCreation());
+    u.setDateMiseAJour(r.getDateMiseAJour());
     if (r.getMotDePasse() != null && !r.getMotDePasse().isBlank()) {
       String hash = BCrypt.hashpw(r.getMotDePasse(), BCrypt.gensalt());
       u.setMotDePasseHash(hash.getBytes(StandardCharsets.UTF_8));

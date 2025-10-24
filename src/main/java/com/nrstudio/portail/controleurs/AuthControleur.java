@@ -4,7 +4,9 @@ import com.nrstudio.portail.dto.ConnexionReponse;
 import com.nrstudio.portail.dto.ConnexionRequete;
 import com.nrstudio.portail.securite.JwtSimple;
 import com.nrstudio.portail.services.UtilisateurService;
+import com.nrstudio.portail.depots.CompanyRepository;
 import com.nrstudio.portail.domaine.Utilisateur;
+import com.nrstudio.portail.domaine.Company;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,41 +15,61 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-// ...existing imports...
-
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin
 public class AuthControleur {
 
-  private final UtilisateurService utilisateurs;
-  private final JwtSimple jwt;
+    private final UtilisateurService utilisateurs;
+    private final CompanyRepository companyRepository;
+    private final JwtSimple jwt;
 
-  public AuthControleur(UtilisateurService utilisateurs, JwtSimple jwt) {
-    this.utilisateurs = utilisateurs;
-    this.jwt = jwt;
-  }
-
-  @PostMapping("/connexion")
-  public ResponseEntity<?> connexion(@RequestBody ConnexionRequete req) {
-    System.out.println(req.getEmail());
-    System.out.println(req.getMotDePasse());
-    Optional<Utilisateur> opt = utilisateurs.trouverParEmail(req.getEmail());
-    if (opt.isEmpty()) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Identifiants invalides");
+    public AuthControleur(UtilisateurService utilisateurs, JwtSimple jwt, CompanyRepository companyRepository) {
+        this.utilisateurs = utilisateurs;
+        this.jwt = jwt;
+        this.companyRepository = companyRepository;
     }
 
-    Utilisateur u = opt.get();
-    String stocke = (u.getMotDePasseHash() == null) ? null
-                    : new String(u.getMotDePasseHash(), StandardCharsets.UTF_8);
+    @PostMapping("/connexion")
+    public ResponseEntity<?> connexion(@RequestBody ConnexionRequete req) {
+        System.out.println(req.getEmail());
+        System.out.println(req.getMotDePasse());
+        Optional<Utilisateur> opt = utilisateurs.trouverParEmail(req.getEmail());
+        System.out.println(opt);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Identifiants invalides");
+        }
 
-    if (stocke != null && BCrypt.checkpw(req.getMotDePasse(), stocke)) {
-      String jeton = jwt.generer(u.getEmail());
-      // Ajoute l'id utilisateur à la réponse
-      return ResponseEntity.ok(
-        new ConnexionReponse(jeton, u.getEmail(), u.getId(), u.getNom(), u.getCompanyId()) 
-      );
+        Utilisateur u = opt.get();
+        String stocke = (u.getMotDePasseHash() == null) ? null
+                : new String(u.getMotDePasseHash(), StandardCharsets.UTF_8);
+
+        // Récupérer companyName - Version avec gestion d'erreur
+        String companyName = "Société non trouvée";
+        if (u.getCompanyId() != null) {
+            try {
+                // Solution avec la méthode @Query
+                companyName = companyRepository.findNomById(u.getCompanyId());
+                
+                // OU Solution alternative avec findById
+                // Optional<Company> companyOpt = companyRepository.findById(u.getCompanyId());
+                // companyName = companyOpt.map(Company::getNom).orElse("Société non trouvée");
+                
+            } catch (Exception e) {
+                System.err.println("Erreur lors de la récupération de la company: " + e.getMessage());
+                companyName = "Erreur société";
+            }
+        }
+        
+        System.out.println("Company Name: " + companyName);
+        
+        if (stocke != null && BCrypt.checkpw(req.getMotDePasse(), stocke)) {
+            String jeton = jwt.generer(u.getEmail());
+            // Ajoute l'id utilisateur à la réponse
+            return ResponseEntity.ok(
+                new ConnexionReponse(jeton, u.getEmail(), u.getId(), u.getNom(), u.getCompanyId(), companyName)
+            );
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Identifiants invalides");
     }
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Identifiants invalides");
-  }
 }
