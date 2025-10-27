@@ -21,11 +21,14 @@ public class Interaction {
   private Integer interventionId;
 
   @Lob
-  @Column(name = "message", nullable = false)
+  @Column(name = "contenu", nullable = false)
   private String message;
 
-  @Column(name = "type_interaction", length = 50)
-  private String typeInteraction;
+  @Column(name = "type_interaction_id")
+  private Integer typeInteractionId;
+
+  @Column(name = "canal_interaction_id")
+  private Integer canalInteractionId;
 
   @Column(name = "auteur_utilisateur_id", nullable = false)
   private Integer auteurUtilisateurId;
@@ -33,8 +36,8 @@ public class Interaction {
   @Column(name = "date_creation", nullable = false)
   private LocalDateTime dateCreation;
 
-  @Column(name = "visible_client")
-  private Boolean visibleClient;
+  // @Column(name = "visible_client")
+  // private Boolean visibleClient;
 
   public Integer getId() {
     return id;
@@ -68,12 +71,20 @@ public class Interaction {
     this.message = message;
   }
 
-  public String getTypeInteraction() {
-    return typeInteraction;
+  public Integer getTypeInteractionId() {
+    return typeInteractionId;
   }
 
-  public void setTypeInteraction(String typeInteraction) {
-    this.typeInteraction = typeInteraction;
+  public void setTypeInteractionId(Integer typeInteractionId) {
+    this.typeInteractionId = typeInteractionId;
+  }
+
+  public Integer getCanalInteractionId() {
+    return canalInteractionId;
+  }
+
+  public void setCanalInteractionId(Integer canalInteractionId) {
+    this.canalInteractionId = canalInteractionId;
   }
 
   public Integer getAuteurUtilisateurId() {
@@ -92,11 +103,25 @@ public class Interaction {
     this.dateCreation = dateCreation;
   }
 
-  public Boolean getVisibleClient() {
-    return visibleClient;
-  }
+  // public Boolean getVisibleClient() {
+  //   return visibleClient;
+  // }
 
-  public void setVisibleClient(Boolean visibleClient) {
-    this.visibleClient = visibleClient;
-  }
+  // public void setVisibleClient(Boolean visibleClient) {
+  //   this.visibleClient = visibleClient;
+  // }
+
+  // TO string
+  @Override
+  public String toString() {
+    return "Interaction{" +
+        "id=" + id +
+        ", ticketId=" + ticketId +
+        ", interventionId=" + interventionId +
+        ", message='" + message + '\'' +
+        ", typeInteractionId=" + typeInteractionId +
+        ", auteurUtilisateurId=" + auteurUtilisateurId +
+        ", dateCreation=" + dateCreation +
+        '}';
+  } 
 }

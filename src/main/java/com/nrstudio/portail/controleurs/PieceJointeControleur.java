@@ -79,10 +79,10 @@ public class PieceJointeControleur {
       pj.setInterventionId(interventionId);
       pj.setNomFichier(nomOriginal);
       pj.setCheminFichier(cheminFichier.toString());
-      pj.setTypeFichier(fichier.getContentType());
-      pj.setTailleFichier(fichier.getSize());
-      pj.setTeleverseParUtilisateurId(utilisateurId);
-      pj.setDateTelechargement(LocalDateTime.now());
+      pj.setTypeMime(fichier.getContentType());
+      pj.setTailleOctets(fichier.getSize());
+      pj.setAjouteParUtilisateurId(utilisateurId);
+      pj.setDateAjout(LocalDateTime.now());
 
       return repo.save(pj);
     } catch (IOException e) {
@@ -99,7 +99,7 @@ public class PieceJointeControleur {
 
       if (resource.exists() || resource.isReadable()) {
         return ResponseEntity.ok()
-          .contentType(MediaType.parseMediaType(pj.getTypeFichier()))
+          .contentType(MediaType.parseMediaType(pj.getTypeMime()))
           .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pj.getNomFichier() + "\"")
           .body(resource);
       } else {

@@ -6,8 +6,9 @@ public class ConnexionReponse {
   private Integer companyId;
   private String companyName;
   private String nom;
+  private String validationCode;
   public ConnexionReponse() {}
-  public ConnexionReponse(String jeton, String email, Integer utilisateurId, String nom, Integer companyId, String companyName) { this.jeton = jeton; this.email = email; this.utilisateurId = utilisateurId; this.nom = nom; this.companyId = companyId; this.companyName = companyName;}
+  public ConnexionReponse(String jeton, String email, Integer utilisateurId, String nom, Integer companyId, String companyName, String validationCode) { this.jeton = jeton; this.email = email; this.utilisateurId = utilisateurId; this.nom = nom; this.companyId = companyId; this.companyName = companyName; this.validationCode = validationCode; }
   public String getJeton() { return jeton; }
   public void setJeton(String jeton) { this.jeton = jeton; }
   public String getEmail() { return email; }
@@ -20,4 +21,6 @@ public class ConnexionReponse {
   public void setCompanyId(Integer companyId) { this.companyId = companyId; }
   public String getCompanyName() { return companyName; }
   public void setCompanyName(String companyName) { this.companyName = companyName; }
+  public String getValidationCode() { return validationCode; }
+  public void setValidationCode(String validationCode) { this.validationCode = validationCode; }
 }

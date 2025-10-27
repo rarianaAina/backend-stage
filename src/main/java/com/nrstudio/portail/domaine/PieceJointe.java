@@ -10,103 +10,173 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class PieceJointe {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Integer id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-  @Column(name = "ticket_id")
-  private Integer ticketId;
+    @Column(name = "nom_fichier", length = 255, nullable = false)
+    private String nomFichier;
 
-  @Column(name = "intervention_id")
-  private Integer interventionId;
+    @Column(name = "url_contenu", length = 500)
+    private String urlContenu;
 
-  @Column(name = "nom_fichier", length = 255, nullable = false)
-  private String nomFichier;
+    @Column(name = "chemin_fichier", length = 500)
+    private String cheminFichier;
 
-  @Column(name = "chemin_fichier", length = 500, nullable = false)
-  private String cheminFichier;
+    @Column(name = "type_mime", length = 100)
+    private String typeMime;
 
-  @Column(name = "type_fichier", length = 100)
-  private String typeFichier;
+    @Column(name = "taille_octets")
+    private Long tailleOctets;
 
-  @Column(name = "taille_fichier")
-  private Long tailleFichier;
+    @Column(name = "ajoute_par_utilisateur_id", nullable = false)
+    private Integer ajouteParUtilisateurId;
 
-  @Column(name = "televerse_par_utilisateur_id", nullable = false)
-  private Integer televerseParUtilisateurId;
+    @Column(name = "ticket_id")
+    private Integer ticketId;
 
-  @Column(name = "date_telechargement", nullable = false)
-  private LocalDateTime dateTelechargement;
+    @Column(name = "intervention_id")
+    private Integer interventionId;
 
-  public Integer getId() {
-    return id;
-  }
+    @Column(name = "interaction_id")
+    private Integer interactionId;
 
-  public void setId(Integer id) {
-    this.id = id;
-  }
+    @Column(name = "date_ajout", nullable = false)
+    private LocalDateTime dateAjout;
 
-  public Integer getTicketId() {
-    return ticketId;
-  }
+    // Constructeurs
+    public PieceJointe() {}
 
-  public void setTicketId(Integer ticketId) {
-    this.ticketId = ticketId;
-  }
+    public PieceJointe(String nomFichier, String urlContenu, String typeMime, Long tailleOctets, 
+                      Integer ajouteParUtilisateurId, Integer ticketId) {
+        this.nomFichier = nomFichier;
+        this.urlContenu = urlContenu;
+        this.typeMime = typeMime;
+        this.tailleOctets = tailleOctets;
+        this.ajouteParUtilisateurId = ajouteParUtilisateurId;
+        this.ticketId = ticketId;
+        this.dateAjout = LocalDateTime.now();
+    }
 
-  public Integer getInterventionId() {
-    return interventionId;
-  }
+    // Getters et Setters
+    public Integer getId() {
+        return id;
+    }
 
-  public void setInterventionId(Integer interventionId) {
-    this.interventionId = interventionId;
-  }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-  public String getNomFichier() {
-    return nomFichier;
-  }
+    public String getNomFichier() {
+        return nomFichier;
+    }
 
-  public void setNomFichier(String nomFichier) {
-    this.nomFichier = nomFichier;
-  }
+    public void setNomFichier(String nomFichier) {
+        this.nomFichier = nomFichier;
+    }
 
-  public String getCheminFichier() {
-    return cheminFichier;
-  }
+    public String getUrlContenu() {
+        return urlContenu;
+    }
 
-  public void setCheminFichier(String cheminFichier) {
-    this.cheminFichier = cheminFichier;
-  }
+    public void setUrlContenu(String urlContenu) {
+        this.urlContenu = urlContenu;
+    }
 
-  public String getTypeFichier() {
-    return typeFichier;
-  }
+    public String getCheminFichier() {
+        return cheminFichier;
+    }
 
-  public void setTypeFichier(String typeFichier) {
-    this.typeFichier = typeFichier;
-  }
+    public void setCheminFichier(String cheminFichier) {
+        this.cheminFichier = cheminFichier;
+    }
 
-  public Long getTailleFichier() {
-    return tailleFichier;
-  }
+    public String getTypeMime() {
+        return typeMime;
+    }
 
-  public void setTailleFichier(Long tailleFichier) {
-    this.tailleFichier = tailleFichier;
-  }
+    public void setTypeMime(String typeMime) {
+        this.typeMime = typeMime;
+    }
 
-  public Integer getTeleverseParUtilisateurId() {
-    return televerseParUtilisateurId;
-  }
+    public Long getTailleOctets() {
+        return tailleOctets;
+    }
 
-  public void setTeleverseParUtilisateurId(Integer televerseParUtilisateurId) {
-    this.televerseParUtilisateurId = televerseParUtilisateurId;
-  }
+    public void setTailleOctets(Long tailleOctets) {
+        this.tailleOctets = tailleOctets;
+    }
 
-  public LocalDateTime getDateTelechargement() {
-    return dateTelechargement;
-  }
+    public Integer getAjouteParUtilisateurId() {
+        return ajouteParUtilisateurId;
+    }
 
-  public void setDateTelechargement(LocalDateTime dateTelechargement) {
-    this.dateTelechargement = dateTelechargement;
-  }
+    public void setAjouteParUtilisateurId(Integer ajouteParUtilisateurId) {
+        this.ajouteParUtilisateurId = ajouteParUtilisateurId;
+    }
+
+    public Integer getTicketId() {
+        return ticketId;
+    }
+
+    public void setTicketId(Integer ticketId) {
+        this.ticketId = ticketId;
+    }
+
+    public Integer getInterventionId() {
+        return interventionId;
+    }
+
+    public void setInterventionId(Integer interventionId) {
+        this.interventionId = interventionId;
+    }
+
+    public Integer getInteractionId() {
+        return interactionId;
+    }
+
+    public void setInteractionId(Integer interactionId) {
+        this.interactionId = interactionId;
+    }
+
+    public LocalDateTime getDateAjout() {
+        return dateAjout;
+    }
+
+    public void setDateAjout(LocalDateTime dateAjout) {
+        this.dateAjout = dateAjout;
+    }
+
+    // Méthode utilitaire pour obtenir l'extension du fichier
+    public String getExtension() {
+        if (nomFichier == null || !nomFichier.contains(".")) {
+            return "";
+        }
+        return nomFichier.substring(nomFichier.lastIndexOf(".") + 1).toLowerCase();
+    }
+
+    // Méthode utilitaire pour formater la taille
+    public String getTailleFormatee() {
+        if (tailleOctets == null) return "0 octets";
+        
+        if (tailleOctets < 1024) {
+            return tailleOctets + " octets";
+        } else if (tailleOctets < 1024 * 1024) {
+            return String.format("%.1f Ko", tailleOctets / 1024.0);
+        } else {
+            return String.format("%.1f Mo", tailleOctets / (1024.0 * 1024.0));
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "PieceJointe{" +
+                "id=" + id +
+                ", nomFichier='" + nomFichier + '\'' +
+                ", typeMime='" + typeMime + '\'' +
+                ", tailleOctets=" + tailleOctets +
+                ", ticketId=" + ticketId +
+                ", dateAjout=" + dateAjout +
+                '}';
+    }
 }

@@ -1,6 +1,9 @@
 package com.nrstudio.portail.controleurs;
 
 import com.nrstudio.portail.depots.TicketRepository;
+import com.nrstudio.portail.depots.ProduitRepository;
+import com.nrstudio.portail.dto.TicketAvecDetails;
+import com.nrstudio.portail.domaine.Produit;
 import com.nrstudio.portail.domaine.Ticket;
 import com.nrstudio.portail.dto.TicketAvecProduitPageReponse;
 import com.nrstudio.portail.dto.TicketCreationRequete;
@@ -9,6 +12,7 @@ import com.nrstudio.portail.services.TicketService;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -19,6 +23,9 @@ public class TicketControleur {
 
   private final TicketRepository repo;
   private final TicketService service;
+
+  @Autowired
+  private ProduitRepository produitRepository;
 
   public TicketControleur(TicketRepository repo, TicketService service) {
     this.repo = repo;
@@ -97,9 +104,39 @@ public class TicketControleur {
 
   // Obtenir un ticket spécifique
   @GetMapping("/{id}")
-  public Ticket obtenir(@PathVariable("id") Integer id) {
-    System.out.println("Obtention du ticket avec l'id : " + id);
-    return repo.findById(id).orElseThrow(); 
+  public TicketAvecDetails obtenir(@PathVariable("id") Integer id) {
+      System.out.println("Obtention du ticket avec l'id : " + id);
+      
+      Ticket ticket = repo.findById(id).orElseThrow();
+      
+      // Créez un DTO avec les informations jointes
+      TicketAvecDetails ticketAvecDetails = new TicketAvecDetails();
+      ticketAvecDetails.setId(ticket.getId());
+      ticketAvecDetails.setReference(ticket.getReference());
+      ticketAvecDetails.setTitre(ticket.getTitre());
+      ticketAvecDetails.setDescription(ticket.getDescription());
+      ticketAvecDetails.setDateCreation(ticket.getDateCreation());
+      ticketAvecDetails.setDateCloture(ticket.getDateCloture());
+      ticketAvecDetails.setProduitId(ticket.getProduitId());
+      ticketAvecDetails.setPrioriteTicketId(ticket.getPrioriteTicketId());
+      ticketAvecDetails.setStatutTicketId(ticket.getStatutTicketId());
+      ticketAvecDetails.setTypeTicketId(ticket.getTypeTicketId());
+      
+      // Récupérez le nom du produit
+      if (ticket.getProduitId() != null) {
+          try {
+              Produit produit = produitRepository.findById(ticket.getProduitId()).orElse(null);
+              if (produit != null) {
+                  ticketAvecDetails.setProduitNom(produit.getCodeProduit());
+              }
+          } catch (Exception e) {
+              System.err.println("Erreur lors de la récupération du produit: " + e.getMessage());
+          }
+      }
+      System.out.println("Ticket avec détails obtenu: " + ticketAvecDetails.getId());
+      System.out.println("Produit ID : " + ticketAvecDetails.getProduitId());
+      System.out.println("Produit Nom: " + ticketAvecDetails.getProduitNom());
+      return ticketAvecDetails;
   }
 
   // @PostMapping

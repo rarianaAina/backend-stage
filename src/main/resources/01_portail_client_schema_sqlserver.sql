@@ -462,6 +462,74 @@ CREATE TABLE dbo.CompanyPARC (
     date_obtention DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
 );
 
+CREATE TABLE ValidationCodes (
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    utilisateur_id NVARCHAR(128) NOT NULL, -- ou INT selon votre structure d'utilisateurs
+    Code CHAR(4) NOT NULL, -- Code à 4 chiffres
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    ExpiresAt DATETIME2 NOT NULL,
+    IsUsed BIT NOT NULL DEFAULT 0,
+    UsedAt DATETIME2 NULL,
+    Attempts INT NOT NULL DEFAULT 0,
+    MaxAttempts INT NOT NULL DEFAULT 3
+);
+
+-- Index pour optimiser les recherches
+CREATE INDEX IX_ValidationCodes_utilisateur_id ON ValidationCodes(utilisateur_id);
+CREATE INDEX IX_ValidationCodes_Code ON ValidationCodes(Code);
+CREATE INDEX IX_ValidationCodes_ExpiresAt ON ValidationCodes(ExpiresAt);
+
+
+-- Créer un nouveau code
+CREATE PROCEDURE sp_CreateValidationCode
+    @utilisateur_id NVARCHAR(128),
+    @Code CHAR(4),
+    @ExpiryMinutes INT = 10
+AS
+BEGIN
+    INSERT INTO ValidationCodes (utilisateur_id, Code, ExpiresAt)
+    VALUES (@utilisateur_id, @Code, DATEADD(MINUTE, @ExpiryMinutes, GETUTCDATE()));
+    
+    SELECT SCOPE_IDENTITY() AS CodeId;
+END
+
+-- Valider un code
+CREATE PROCEDURE sp_ValidateCode
+    @utilisateur_id NVARCHAR(128),
+    @Code CHAR(4)
+AS
+BEGIN
+    DECLARE @CodeId BIGINT, @IsValid BIT = 0, @Message NVARCHAR(100);
+
+    SELECT @CodeId = Id 
+    FROM ValidationCodes 
+    WHERE utilisateur_id = @utilisateur_id 
+      AND Code = @Code
+      AND ExpiresAt > GETUTCDATE()
+      AND IsUsed = 0
+      AND Attempts < MaxAttempts;
+
+    IF @CodeId IS NOT NULL
+    BEGIN
+        UPDATE ValidationCodes 
+        SET IsUsed = 1, UsedAt = GETUTCDATE()
+        WHERE Id = @CodeId;
+        
+        SET @IsValid = 1;
+        SET @Message = 'Code valide';
+    END
+    ELSE
+    BEGIN
+        -- Incrémenter les tentatives si code existe mais invalide
+        UPDATE ValidationCodes 
+        SET Attempts = Attempts + 1
+        WHERE utilisateur_id = @utilisateur_id AND Code = @Code AND IsUsed = 0;
+        
+        SET @Message = 'Code invalide ou expiré';
+    END
+
+    SELECT @IsValid AS IsValid, @Message AS Message;
+END
 /* =========================================================
    Donnees de base (seeds) minimales
 ========================================================= */

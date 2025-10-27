@@ -200,73 +200,6 @@ public Ticket creerEtSynchroniser(TicketCreationRequete r) {
       .toList();
   }
 
-  //Ticket par utilisateur avec pagination et filtres
-  // public List<Ticket> listerTicketsUtilisateurAvecPaginationEtFiltres(
-  //   Integer utilisateurId,
-  //   int page,
-  //   int size,
-  //   String statutTicketIdStr,
-  //   String reference,
-  //   String produitIdStr,
-  //   String dateDebut,
-  //   String dateFin) {
-
-  //   Utilisateur utilisateur = utilisateurs.findById(utilisateurId)
-  //       .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
-  //   Integer utilisateurIdClient = utilisateur.getIdExterneCrm() != null ? Integer.valueOf(utilisateur.getIdExterneCrm()) : null;
-
-  //   Stream<Ticket> ticketStream = tickets.findAll().stream()
-  //       .filter(ticket -> utilisateurIdClient.equals(ticket.getClientId()));
-
-  //   // Filtres
-  //   if (statutTicketIdStr != null && !statutTicketIdStr.isEmpty()) {
-  //     try {
-  //       Integer statutTicketId = Integer.valueOf(statutTicketIdStr);
-  //       ticketStream = ticketStream.filter(ticket -> statutTicketId.equals(ticket.getStatutTicketId()));
-  //     } catch (NumberFormatException e) {
-  //       throw new IllegalArgumentException("statutTicketId invalide : " + statutTicketIdStr);
-  //     }
-  //   }
-
-  //   if (reference != null && !reference.isEmpty()) {
-  //     ticketStream = ticketStream.filter(ticket -> 
-  //         ticket.getReference() != null &&
-  //         ticket.getReference().toLowerCase().contains(reference.toLowerCase()));
-  //   }
-
-  //   if (produitIdStr != null && !produitIdStr.isEmpty()) {
-  //     try {
-  //       Integer produitId = Integer.valueOf(produitIdStr);
-  //       ticketStream = ticketStream.filter(ticket -> 
-  //           ticket.getProduitId() != null &&
-  //           ticket.getProduitId().equals(produitId));
-  //     } catch (NumberFormatException e) {
-  //       throw new IllegalArgumentException("produitId invalide : " + produitIdStr);
-  //     }
-  //   }
-
-  //   if (dateDebut != null && !dateDebut.isEmpty()) {
-  //     LocalDate debut = LocalDate.parse(dateDebut);
-  //     ticketStream = ticketStream.filter(ticket -> {
-  //       if (ticket.getDateCreation() == null) return false;
-  //       return !ticket.getDateCreation().toLocalDate().isBefore(debut);
-  //     });
-  //   }
-
-  //   if (dateFin != null && !dateFin.isEmpty()) {
-  //     LocalDate fin = LocalDate.parse(dateFin);
-  //     ticketStream = ticketStream.filter(ticket -> {
-  //       if (ticket.getDateCreation() == null) return false;
-  //       return !ticket.getDateCreation().toLocalDate().isAfter(fin);
-  //     });
-  //   }
-
-  //   return ticketStream
-  //       .skip(page * size)
-  //       .limit(size)
-  //       .toList();
-  // }
-
   public TicketAvecProduitPageReponse listerTicketsUtilisateurAvecPaginationEtFiltres(
     Integer utilisateurId,
     int page,
@@ -472,6 +405,7 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
       String nouveauStatut = mapStatutIdToCrmString(nouveauStatutId);
 
       Utilisateur createur = utilisateurs.findById(t.getCreeParUtilisateurId()).orElse(null);
+      System.out.println(createur.getTelephone());
       if (createur != null && createur.getEmail() != null) {
         emailService.envoyerNotificationChangementStatut(
           createur.getEmail(),
@@ -479,6 +413,7 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
           ancienStatut,
           nouveauStatut
         );
+
 
         if (createur.getTelephone() != null) {
           whatsAppService.envoyerNotificationChangementStatut(
