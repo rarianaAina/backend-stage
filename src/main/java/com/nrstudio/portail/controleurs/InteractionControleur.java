@@ -71,6 +71,7 @@ public class InteractionControleur {
 
     @PostMapping
     public InteractionDTO creer(@RequestBody InteractionCreateDTO dto) {
+        System.out.println("Création d'une interaction avec les données: " + dto);
         // Validation des références
         TypeInteraction typeInteraction = typeInteractionRepo.findById(dto.getTypeInteractionId())
                 .orElseThrow(() -> new RuntimeException("Type d'interaction non trouvé"));
@@ -86,7 +87,7 @@ public class InteractionControleur {
         interaction.setTicketId(dto.getTicketId());
         interaction.setInterventionId(dto.getInterventionId());
         interaction.setMessage(dto.getMessage());
-        interaction.setTypeInteractionId(3);
+        interaction.setTypeInteractionId(dto.getTypeInteractionId());
         interaction.setCanalInteractionId(1);
         interaction.setAuteurUtilisateurId(dto.getAuteurUtilisateurId());
         interaction.setDateCreation(LocalDateTime.now());
@@ -105,7 +106,6 @@ public class InteractionControleur {
         dto.setMessage(interaction.getMessage());
         dto.setDateCreation(interaction.getDateCreation());
         // dto.setVisibleClient(interaction.getVisibleClient());
-
         // Récupération du type d'interaction
         if (interaction.getTypeInteractionId() != null) {
             typeInteractionRepo.findById(interaction.getTypeInteractionId()).ifPresent(type -> {

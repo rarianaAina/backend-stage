@@ -36,7 +36,7 @@ public class ValidationCodeControleur {
     @PostMapping("/regenerer-code")
     public ResponseEntity<CodeValidationResponse> regenererCode(@RequestParam("utilisateurId") String utilisateurId) {
         try {
-            var codeGenere = validationCodeService.generateCode(utilisateurId);
+            var codeGenere = validationCodeService.generateCode(utilisateurId, "");
             
             // TODO: Envoyer le code par email/SMS
             System.out.println("Nouveau code généré: " + codeGenere.getCode());

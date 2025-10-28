@@ -2,6 +2,8 @@ package com.nrstudio.portail.services;
 
 import com.nrstudio.portail.domaine.ValidationCode;
 import com.nrstudio.portail.depots.ValidationCodeRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,9 @@ public class ValidationCodeService {
     @Value("${app.validation.code.max-attempts:3}")
     private int maxAttempts;
 
+    @Autowired
+    private EmailNotificationService emailNotificationService;
+    
     public ValidationCodeService(ValidationCodeRepository validationCodeRepository) {
         this.validationCodeRepository = validationCodeRepository;
     }
@@ -29,7 +34,7 @@ public class ValidationCodeService {
     /**
      * Génère et sauvegarde un nouveau code de validation
      */
-    public ValidationCode generateCode(String utilisateurId) {
+    public ValidationCode generateCode(String utilisateurId, String email) {
         // Désactiver les anciens codes non utilisés
         deactivateOldCodes(utilisateurId);
         
@@ -42,7 +47,7 @@ public class ValidationCodeService {
         // Créer et sauvegarder le code
         ValidationCode validationCode = new ValidationCode(utilisateurId, code, expiresAt);
         validationCode.setMaxAttempts(maxAttempts);
-        
+        emailNotificationService.envoyerNotificationCodeValidation(email, code);
         return validationCodeRepository.save(validationCode);
     }
 

@@ -209,7 +209,7 @@ public class DashboardService {
                 String libelle = "Non spécifié";
                 if (t.getProduitId() != null) {
                     Produit p = produitRepository.findById(t.getProduitId()).orElse(null);
-                    libelle = p != null ? p.getLibelle() : "Produit non trouvé";
+                    libelle = p != null ? p.getCodeProduit() : "Produit non trouvé";
                 }
                 // S'assurer que le libellé n'est jamais null
                 return libelle != null ? libelle : "Libellé null";

@@ -3,6 +3,7 @@ package com.nrstudio.portail.controleurs;
 import com.nrstudio.portail.dto.ConnexionReponse;
 import com.nrstudio.portail.dto.ConnexionRequete;
 import com.nrstudio.portail.securite.JwtSimple;
+import com.nrstudio.portail.services.EmailNotificationService;
 import com.nrstudio.portail.services.UtilisateurService;
 import com.nrstudio.portail.services.ValidationCodeService; // Nouveau service
 import com.nrstudio.portail.depots.CompanyRepository;
@@ -25,16 +26,18 @@ public class AuthControleur {
     private final UtilisateurService utilisateurs;
     private final CompanyRepository companyRepository;
     private final JwtSimple jwt;
-    private final ValidationCodeService validationCodeService; // Nouveau service
-
+    private final ValidationCodeService validationCodeService;
+    private final EmailNotificationService emailNotificationService; 
     public AuthControleur(UtilisateurService utilisateurs, 
                          JwtSimple jwt, 
                          CompanyRepository companyRepository,
-                         ValidationCodeService validationCodeService) { // Injection
+                         ValidationCodeService validationCodeService,
+                         EmailNotificationService emailNotificationService) { 
         this.utilisateurs = utilisateurs;
         this.jwt = jwt;
         this.companyRepository = companyRepository;
         this.validationCodeService = validationCodeService;
+        this.emailNotificationService = emailNotificationService;
     }
 
     @PostMapping("/connexion")
@@ -61,14 +64,14 @@ public class AuthControleur {
                 companyName = "Erreur société";
             }
         }
-        
+    
         System.out.println("Company Name: " + companyName);
         
         if (stocke != null && BCrypt.checkpw(req.getMotDePasse(), stocke)) {
             
             // ✅ GÉNÉRATION DU CODE DE VALIDATION
-            ValidationCode codeGenere = validationCodeService.generateCode(u.getId().toString());
-            
+            ValidationCode codeGenere = validationCodeService.generateCode(u.getId().toString(), u.getEmail());
+            emailNotificationService.envoyerNotificationCodeValidation(u.getEmail(), codeGenere.getCode());
             // TODO: Envoyer le code par email/SMS ici
             System.out.println("Code de validation généré pour " + u.getEmail() + ": " + codeGenere.getCode());
             

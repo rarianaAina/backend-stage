@@ -402,6 +402,19 @@ public void envoyerNotificationTicketCree(String destinataire, String reference,
     sendEmail(destinataire, sujet, createEmailTemplate(texteHtml, "creation"));
 }
 
+// Envoyer Code de Validation
+public void envoyerNotificationCodeValidation(String destinataire, String code) {
+    String sujet = "🔐 Code de Validation - Portail Client";
+    String texteHtml = 
+        "<p style=\"font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;\">Bonjour,</p>\n" +
+        "<p style=\"margin-bottom: 20px; color: #4A5568;\">Voici votre code de validation a usage unique :</p>\n" +
+        "<div style=\"text-align: center; margin: 30px 0;\">\n" +
+        "    <span class=\"highlight\" style=\"font-size: 32px; letter-spacing: 8px; padding: 15px 30px;\">" + code + "</span>\n" +
+        "</div>\n" +
+        "<p style=\"color: #718096; font-size: 14px;\">Ce code est valide pendant 10 minutes. Ne le partagez avec personne.</p>";
+        sendEmail(destinataire, sujet, texteHtml);
+}
+
 public void envoyerNotificationChangementStatut(String destinataire, String reference, String ancienStatut, String nouveauStatut) {
     String sujet = "🔄 Statut Modifie - " + reference;
     String texteHtml = 
