@@ -28,6 +28,66 @@ public class UtilisateurService {
     }
 
     // NOUVELLE méthode paginée avec filtres
+    // public UtilisateurPageReponse listerUtilisateursAvecPaginationEtFiltres(
+    //     int page,
+    //     int size,
+    //     String recherche,
+    //     String actifStr,
+    //     String dateDebut,
+    //     String dateFin) {
+
+    //     Stream<Utilisateur> utilisateurStream = repo.findAll().stream();
+
+    //     // Filtre par recherche (nom, prénom, email, identifiant)
+    //     if (recherche != null && !recherche.isEmpty()) {
+    //         String rechercheLower = recherche.toLowerCase();
+    //         utilisateurStream = utilisateurStream.filter(utilisateur ->
+    //             (utilisateur.getNom() != null && utilisateur.getNom().toLowerCase().contains(rechercheLower)) ||
+    //             (utilisateur.getPrenom() != null && utilisateur.getPrenom().toLowerCase().contains(rechercheLower)) ||
+    //             (utilisateur.getEmail() != null && utilisateur.getEmail().toLowerCase().contains(rechercheLower)) ||
+    //             (utilisateur.getIdentifiant() != null && utilisateur.getIdentifiant().toLowerCase().contains(rechercheLower))
+    //         );
+    //     }
+
+    //     // Filtre par statut actif/inactif
+    //     if (actifStr != null && !actifStr.isEmpty()) {
+    //         Boolean actif = Boolean.valueOf(actifStr);
+    //         utilisateurStream = utilisateurStream.filter(utilisateur -> 
+    //             utilisateur.isActif() == actif
+    //         );
+    //     }
+
+    //     // Filtre par date de création (début)
+    //     if (dateDebut != null && !dateDebut.isEmpty()) {
+    //         LocalDate debut = LocalDate.parse(dateDebut);
+    //         utilisateurStream = utilisateurStream.filter(utilisateur -> {
+    //             if (utilisateur.getDateCreation() == null) return false;
+    //             return !utilisateur.getDateCreation().toLocalDate().isBefore(debut);
+    //         });
+    //     }
+
+    //     // Filtre par date de création (fin)
+    //     if (dateFin != null && !dateFin.isEmpty()) {
+    //         LocalDate fin = LocalDate.parse(dateFin);
+    //         utilisateurStream = utilisateurStream.filter(utilisateur -> {
+    //             if (utilisateur.getDateCreation() == null) return false;
+    //             return !utilisateur.getDateCreation().toLocalDate().isAfter(fin);
+    //         });
+    //     }
+
+    //     // Appliquer la pagination
+    //     List<Utilisateur> utilisateurs = utilisateurStream
+    //         .skip(page * size)
+    //         .limit(size)
+    //         .toList();
+
+    //     // Compter le total des éléments (pour la pagination)
+    //     long totalElements = compterUtilisateursAvecFiltres(recherche, actifStr, dateDebut, dateFin);
+    //     int totalPages = (int) Math.ceil((double) totalElements / size);
+
+    //     return new UtilisateurPageReponse(utilisateurs, page, totalPages, totalElements, size);
+    // }
+
     public UtilisateurPageReponse listerUtilisateursAvecPaginationEtFiltres(
         int page,
         int size,
@@ -36,12 +96,37 @@ public class UtilisateurService {
         String dateDebut,
         String dateFin) {
 
-        Stream<Utilisateur> utilisateurStream = repo.findAll().stream();
+        // Appliquer les filtres
+        Stream<Utilisateur> utilisateurStream = appliquerFiltres(
+            repo.findAll().stream(), 
+            recherche, actifStr, dateDebut, dateFin
+        );
 
-        // Filtre par recherche (nom, prénom, email, identifiant)
+        // Compter le total AVANT la pagination
+        long totalElements = utilisateurStream.count();
+        
+        // Réappliquer les filtres pour la pagination (le stream est consommé après count())
+        utilisateurStream = appliquerFiltres(
+            repo.findAll().stream(), 
+            recherche, actifStr, dateDebut, dateFin
+        );
+
+        // Appliquer la pagination
+        List<Utilisateur> utilisateurs = utilisateurStream
+            .skip(page * size)
+            .limit(size)
+            .toList();
+
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        return new UtilisateurPageReponse(utilisateurs, page, totalPages, totalElements, size);
+    }
+
+    private Stream<Utilisateur> appliquerFiltres(Stream<Utilisateur> stream, String recherche, String actifStr, String dateDebut, String dateFin) {
+        // Filtre par recherche
         if (recherche != null && !recherche.isEmpty()) {
             String rechercheLower = recherche.toLowerCase();
-            utilisateurStream = utilisateurStream.filter(utilisateur ->
+            stream = stream.filter(utilisateur ->
                 (utilisateur.getNom() != null && utilisateur.getNom().toLowerCase().contains(rechercheLower)) ||
                 (utilisateur.getPrenom() != null && utilisateur.getPrenom().toLowerCase().contains(rechercheLower)) ||
                 (utilisateur.getEmail() != null && utilisateur.getEmail().toLowerCase().contains(rechercheLower)) ||
@@ -52,15 +137,13 @@ public class UtilisateurService {
         // Filtre par statut actif/inactif
         if (actifStr != null && !actifStr.isEmpty()) {
             Boolean actif = Boolean.valueOf(actifStr);
-            utilisateurStream = utilisateurStream.filter(utilisateur -> 
-                utilisateur.isActif() == actif
-            );
+            stream = stream.filter(utilisateur -> utilisateur.isActif() == actif);
         }
 
         // Filtre par date de création (début)
         if (dateDebut != null && !dateDebut.isEmpty()) {
             LocalDate debut = LocalDate.parse(dateDebut);
-            utilisateurStream = utilisateurStream.filter(utilisateur -> {
+            stream = stream.filter(utilisateur -> {
                 if (utilisateur.getDateCreation() == null) return false;
                 return !utilisateur.getDateCreation().toLocalDate().isBefore(debut);
             });
@@ -69,25 +152,14 @@ public class UtilisateurService {
         // Filtre par date de création (fin)
         if (dateFin != null && !dateFin.isEmpty()) {
             LocalDate fin = LocalDate.parse(dateFin);
-            utilisateurStream = utilisateurStream.filter(utilisateur -> {
+            stream = stream.filter(utilisateur -> {
                 if (utilisateur.getDateCreation() == null) return false;
                 return !utilisateur.getDateCreation().toLocalDate().isAfter(fin);
             });
         }
 
-        // Appliquer la pagination
-        List<Utilisateur> utilisateurs = utilisateurStream
-            .skip(page * size)
-            .limit(size)
-            .toList();
-
-        // Compter le total des éléments (pour la pagination)
-        long totalElements = compterUtilisateursAvecFiltres(recherche, actifStr, dateDebut, dateFin);
-        int totalPages = (int) Math.ceil((double) totalElements / size);
-
-        return new UtilisateurPageReponse(utilisateurs, page, totalPages, totalElements, size);
+        return stream;
     }
-
     // Méthode pour compter le total avec les mêmes filtres
     private long compterUtilisateursAvecFiltres(
         String recherche,
