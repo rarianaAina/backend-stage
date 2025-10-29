@@ -1,19 +1,22 @@
 package com.nrstudio.portail.dto;
 
 import com.nrstudio.portail.domaine.Utilisateur;
+import com.nrstudio.portail.dto.utilisateur.UtilisateurDTO;
 import lombok.Data;
 import java.util.List;
 
 @Data
 public class UtilisateurPageReponse {
-    private List<Utilisateur> utilisateurs;
+    private List<UtilisateurDTO> utilisateurs; // Utiliser DTO au lieu de l'entité
     private int pageCourante;
     private int totalPages;
     private long totalElements;
     private int taillePage;
 
     public UtilisateurPageReponse(List<Utilisateur> utilisateurs, int pageCourante, int totalPages, long totalElements, int taillePage) {
-        this.utilisateurs = utilisateurs;
+        this.utilisateurs = utilisateurs.stream()
+                .map(UtilisateurDTO::new)
+                .toList();
         this.pageCourante = pageCourante;
         this.totalPages = totalPages;
         this.totalElements = totalElements;
