@@ -404,6 +404,7 @@ public void envoyerNotificationTicketCree(String destinataire, String reference,
 
 // Envoyer Code de Validation
 public void envoyerNotificationCodeValidation(String destinataire, String code) {
+    
     String sujet = "🔐 Code de Validation - Portail Client";
     String texteHtml = 
         "<p style=\"font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;\">Bonjour,</p>\n" +
@@ -413,6 +414,12 @@ public void envoyerNotificationCodeValidation(String destinataire, String code) 
         "</div>\n" +
         "<p style=\"color: #718096; font-size: 14px;\">Ce code est valide pendant 10 minutes. Ne le partagez avec personne.</p>";
         sendEmail(destinataire, sujet, texteHtml);
+}
+
+public void envoyerEmailAvecTemplate(String destinataire, String sujet, String contenuHtml) {
+    // Utiliser le template de base avec le contenu personnalisé
+    String emailComplet = createEmailTemplate(contenuHtml, "custom");
+    sendEmail(destinataire, sujet, emailComplet);
 }
 
 public void envoyerNotificationChangementStatut(String destinataire, String reference, String ancienStatut, String nouveauStatut) {

@@ -32,7 +32,8 @@ public class TicketService {
   private final CompanyRepository companies;
   private final UtilisateurRepository utilisateurs;
   private final ProduitRepository produitRepository;
-  
+  private final NotificationWorkflowService notificationWorkflowService;
+
 
   public TicketService(TicketRepository tickets,
                        @Qualifier("crmJdbc") JdbcTemplate crmJdbc,
@@ -40,7 +41,8 @@ public class TicketService {
                        WhatsAppNotificationService whatsAppService,
                        CompanyRepository companies,
                        UtilisateurRepository utilisateurs,
-                       ProduitRepository produitRepository) {
+                       ProduitRepository produitRepository,
+                       NotificationWorkflowService notificationWorkflowService) {
     this.tickets = tickets;
     this.crmJdbc = crmJdbc;
     this.emailService = emailService;
@@ -48,6 +50,7 @@ public class TicketService {
     this.companies = companies;
     this.utilisateurs = utilisateurs;
     this.produitRepository = produitRepository;
+    this.notificationWorkflowService = notificationWorkflowService;
   }
 
 @Transactional
@@ -361,84 +364,101 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
 }
 
 
+  // private void envoyerNotificationsCreation(Ticket t) {
+  //     Integer clientId = t.getClientId();
+  //     System.out.println("Client ID: " + clientId);
+  //   try {
+  //     Utilisateur createur = utilisateurs.findByIdExterneCrm(t.getClientId().toString()).orElse(null);
+
+  //     System.out.println(createur.getEmail());
+  //     if (createur != null && createur.getEmail() != null) {
+  //       emailService.envoyerNotificationTicketCree(
+  //         createur.getEmail(),
+  //         t.getReference(),
+  //         t.getTitre()
+  //       );
+
+  //       // if (createur.getTelephone() != null) {
+  //       //   whatsAppService.envoyerNotificationTicketCree(
+  //       //     createur.getTelephone(),
+  //       //     t.getReference(),
+  //       //     t.getTitre()
+  //       //   );
+  //       // }
+  //     }
+
+  //     // if (t.getAffecteAUtilisateurId() != null) {
+  //     //   Utilisateur consultant = utilisateurs.findById(t.getAffecteAUtilisateurId()).orElse(null);
+  //     //   if (consultant != null && consultant.getEmail() != null) {
+  //     //     emailService.envoyerNotificationTicketCree(
+  //     //       consultant.getEmail(),
+  //     //       t.getReference(),
+  //     //       t.getTitre()
+  //     //     );
+  //     //   }
+  //     // }
+  //   } catch (Exception e) {
+  //     System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
+  //   }
+  // }
+
   private void envoyerNotificationsCreation(Ticket t) {
-      Integer clientId = t.getClientId();
-      System.out.println("Client ID: " + clientId);
-    try {
-      Utilisateur createur = utilisateurs.findByIdExterneCrm(t.getClientId().toString()).orElse(null);
-
-      System.out.println(createur.getEmail());
-      if (createur != null && createur.getEmail() != null) {
-        emailService.envoyerNotificationTicketCree(
-          createur.getEmail(),
-          t.getReference(),
-          t.getTitre()
-        );
-
-        // if (createur.getTelephone() != null) {
-        //   whatsAppService.envoyerNotificationTicketCree(
-        //     createur.getTelephone(),
-        //     t.getReference(),
-        //     t.getTitre()
-        //   );
-        // }
+      try {
+          notificationWorkflowService.executerWorkflowNotification("CREATION_TICKET", t);
+      } catch (Exception e) {
+          System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
+          e.printStackTrace();
       }
-
-      // if (t.getAffecteAUtilisateurId() != null) {
-      //   Utilisateur consultant = utilisateurs.findById(t.getAffecteAUtilisateurId()).orElse(null);
-      //   if (consultant != null && consultant.getEmail() != null) {
-      //     emailService.envoyerNotificationTicketCree(
-      //       consultant.getEmail(),
-      //       t.getReference(),
-      //       t.getTitre()
-      //     );
-      //   }
-      // }
-    } catch (Exception e) {
-      System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
-    }
   }
 
   private void envoyerNotificationsChangementStatut(Ticket t, Integer ancienStatutId, Integer nouveauStatutId) {
     try {
-      String ancienStatut = mapStatutIdToCrmString(ancienStatutId);
-      String nouveauStatut = mapStatutIdToCrmString(nouveauStatutId);
-
-      Utilisateur createur = utilisateurs.findById(t.getCreeParUtilisateurId()).orElse(null);
-      System.out.println(createur.getTelephone());
-      if (createur != null && createur.getEmail() != null) {
-        emailService.envoyerNotificationChangementStatut(
-          createur.getEmail(),
-          t.getReference(),
-          ancienStatut,
-          nouveauStatut
-        );
-
-
-        if (createur.getTelephone() != null) {
-          whatsAppService.envoyerNotificationChangementStatut(
-            createur.getTelephone(),
-            t.getReference(),
-            nouveauStatut
-          );
-        }
-      }
-
-      if (t.getAffecteAUtilisateurId() != null) {
-        Utilisateur consultant = utilisateurs.findById(t.getAffecteAUtilisateurId()).orElse(null);
-        if (consultant != null && consultant.getEmail() != null) {
-          emailService.envoyerNotificationChangementStatut(
-            consultant.getEmail(),
-            t.getReference(),
-            ancienStatut,
-            nouveauStatut
-          );
-        }
-      }
+        notificationWorkflowService.executerWorkflowNotification("MODIFICATION_STATUT_TICKET", t, ancienStatutId, nouveauStatutId);
     } catch (Exception e) {
-      System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
+        System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
+        e.printStackTrace();
     }
-  }
+}
+  // private void envoyerNotificationsChangementStatut(Ticket t, Integer ancienStatutId, Integer nouveauStatutId) {
+  //   try {
+  //     String ancienStatut = mapStatutIdToCrmString(ancienStatutId);
+  //     String nouveauStatut = mapStatutIdToCrmString(nouveauStatutId);
+
+  //     Utilisateur createur = utilisateurs.findById(t.getCreeParUtilisateurId()).orElse(null);
+  //     System.out.println(createur.getTelephone());
+  //     if (createur != null && createur.getEmail() != null) {
+  //       emailService.envoyerNotificationChangementStatut(
+  //         createur.getEmail(),
+  //         t.getReference(),
+  //         ancienStatut,
+  //         nouveauStatut
+  //       );
+
+
+  //       if (createur.getTelephone() != null) {
+  //         whatsAppService.envoyerNotificationChangementStatut(
+  //           createur.getTelephone(),
+  //           t.getReference(),
+  //           nouveauStatut
+  //         );
+  //       }
+  //     }
+
+  //     if (t.getAffecteAUtilisateurId() != null) {
+  //       Utilisateur consultant = utilisateurs.findById(t.getAffecteAUtilisateurId()).orElse(null);
+  //       if (consultant != null && consultant.getEmail() != null) {
+  //         emailService.envoyerNotificationChangementStatut(
+  //           consultant.getEmail(),
+  //           t.getReference(),
+  //           ancienStatut,
+  //           nouveauStatut
+  //         );
+  //       }
+  //     }
+  //   } catch (Exception e) {
+  //     System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
+  //   }
+  // }
 
   private String truncate(String s, int max) {
     if (s == null) return null;
