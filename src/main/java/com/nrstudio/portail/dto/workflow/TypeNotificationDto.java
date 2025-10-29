@@ -1,4 +1,4 @@
-package com.nrstudio.portail.dto;
+package com.nrstudio.portail.dto.workflow;
 
 public class TypeNotificationDto {
     private Integer id;
