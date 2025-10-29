@@ -479,6 +479,115 @@ CREATE INDEX IX_ValidationCodes_utilisateur_id ON ValidationCodes(utilisateur_id
 CREATE INDEX IX_ValidationCodes_Code ON ValidationCodes(Code);
 CREATE INDEX IX_ValidationCodes_ExpiresAt ON ValidationCodes(ExpiresAt);
 
+-- Création de la table type_notification
+CREATE TABLE type_notification (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    libelle NVARCHAR(255) NOT NULL,
+    description NVARCHAR(MAX),
+    template_id INT NULL, -- Lien vers le template de notification
+    est_actif BIT NOT NULL DEFAULT 1,
+    date_creation DATETIME2 NOT NULL DEFAULT GETDATE(),
+    date_modification DATETIME2 NULL
+);
+
+-- Création de la table workflow_notification_mail
+CREATE TABLE workflow_notification_mail (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    ordre INT NOT NULL,
+    utilisateur_id INT NOT NULL,
+    type_notification_id INT NOT NULL,
+    est_actif BIT NOT NULL DEFAULT 1,
+    date_creation DATETIME2 NOT NULL DEFAULT GETDATE(),
+    date_modification DATETIME2 NULL,
+    
+    -- Contraintes d'unicité
+    CONSTRAINT UK_workflow_ordre_type UNIQUE (ordre, type_notification_id),
+    
+    -- Contraintes de clé étrangère
+    CONSTRAINT FK_workflow_type_notification 
+        FOREIGN KEY (type_notification_id) 
+        REFERENCES type_notification(id),
+    
+    -- Contrainte pour éviter les ordres négatifs
+    CONSTRAINT CHK_workflow_ordre_positif 
+        CHECK (ordre > 0)
+);
+
+-- Ajout de la clé étrangère vers notification_template
+ALTER TABLE type_notification
+ADD CONSTRAINT FK_type_notification_template
+    FOREIGN KEY (template_id) 
+    REFERENCES notification_template(id);
+
+-- Création d'index pour améliorer les performances
+CREATE INDEX IX_workflow_ordre ON workflow_notification_mail(ordre);
+CREATE INDEX IX_workflow_type_notification ON workflow_notification_mail(type_notification_id);
+CREATE INDEX IX_workflow_utilisateur ON workflow_notification_mail(utilisateur_id);
+CREATE INDEX IX_type_notification_code ON type_notification(code);
+CREATE INDEX IX_type_notification_template ON type_notification(template_id);
+
+
+-- Vue pour faciliter la consultation du workflow avec toutes les informations
+CREATE VIEW v_workflow_notification_complet AS
+SELECT 
+    wn.id,
+    wn.ordre,
+    wn.utilisateur_id,
+    wn.type_notification_id,
+    tn.code AS type_notification_code,
+    tn.libelle AS type_notification_libelle,
+    tn.template_id,
+    nt.code AS template_code,
+    nt.libelle AS template_libelle,
+    nt.canal AS template_canal,
+    nt.sujet AS template_sujet,
+    wn.est_actif,
+    wn.date_creation,
+    wn.date_modification
+FROM workflow_notification_mail wn
+INNER JOIN type_notification tn ON wn.type_notification_id = tn.id
+LEFT JOIN notification_template nt ON tn.template_id = nt.id;
+
+-- Vue pour récupérer le workflow actif par type de notification
+CREATE VIEW v_workflow_actif_par_type AS
+SELECT 
+    tn.code AS type_notification_code,
+    tn.libelle AS type_notification_libelle,
+    wn.ordre,
+    wn.utilisateur_id,
+    nt.sujet AS template_sujet,
+    nt.contenu_html AS template_contenu
+FROM workflow_notification_mail wn
+INNER JOIN type_notification tn ON wn.type_notification_id = tn.id
+LEFT JOIN notification_template nt ON tn.template_id = nt.id
+WHERE wn.est_actif = 1 AND tn.est_actif = 1
+ORDER BY tn.code, wn.ordre;
+
+-- Procédure stockée pour ajouter une règle au workflow
+CREATE PROCEDURE sp_ajouter_regle_workflow
+    @ordre INT,
+    @utilisateur_id INT,
+    @type_notification_code VARCHAR(50),
+    @est_actif BIT = 1
+AS
+BEGIN
+    DECLARE @type_notification_id INT
+    
+    SELECT @type_notification_id = id 
+    FROM type_notification 
+    WHERE code = @type_notification_code
+    
+    IF @type_notification_id IS NOT NULL
+    BEGIN
+        INSERT INTO workflow_notification_mail (ordre, utilisateur_id, type_notification_id, est_actif)
+        VALUES (@ordre, @utilisateur_id, @type_notification_id, @est_actif)
+    END
+    ELSE
+    BEGIN
+        RAISERROR('Type de notification non trouvé', 16, 1)
+    END
+END;
 
 -- Créer un nouveau code
 CREATE PROCEDURE sp_CreateValidationCode
@@ -574,4 +683,19 @@ INSERT INTO dbo.canal_interaction(code, libelle) VALUES
 ('PORTAIL','Portail'),
 ('EMAIL','Email'),
 ('WHATSAPP','WhatsApp');
+
+-- Insertion des types de notification spécifiques
+INSERT INTO type_notification (code, libelle, description) VALUES
+('CREATION_TICKET', 'Création de ticket', 'Notification envoyée lors de la création d''un nouveau ticket'),
+('MODIFICATION_STATUT_TICKET', 'Modification statut ticket', 'Notification envoyée lors du changement de statut d''un ticket'),
+('AJOUT_SOLUTION', 'Ajout d''une solution', 'Notification envoyée lors de l''ajout d''une solution à un ticket'),
+('CLOTURE_TICKET', 'Clôture d''un ticket', 'Notification envoyée lors de la clôture d''un ticket');
+
+-- Insertion de données exemple pour le workflow
+-- Exemple pour la création de ticket : envoi d'abord au créateur, puis au responsable
+INSERT INTO workflow_notification_mail (ordre, utilisateur_id, type_notification_id) VALUES
+(1, 2421, 1),  -- Premier envoi pour création ticket (créateur)
+(2, 1751, 1),  -- Deuxième envoi pour création ticket (responsable)
+
+
 GO
