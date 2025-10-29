@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -68,4 +69,7 @@ public class Utilisateur {
 
     @Column(name = "date_mise_a_jour", nullable = false)
     private LocalDateTime dateMiseAJour;
+
+    @OneToMany(mappedBy = "utilisateur", fetch = FetchType.LAZY)
+    private Set<UtilisateurRole> roles;
 }
