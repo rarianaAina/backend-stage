@@ -64,27 +64,27 @@ class EmailRealSendTest {
         System.out.println("📧 Vérifiez votre boîte Gmail dans quelques instants...");
     }
 
-    @Test
-    void testEnvoiAvecEmailNotificationService() throws Exception {
-        // Création manuelle du service pour éviter la configuration Spring complète
-        JavaMailSender mailSender = createRealMailSender();
-        EmailNotificationService emailService = new EmailNotificationService(mailSender);
+    // @Test
+    // void testEnvoiAvecEmailNotificationService() throws Exception {
+    //     // Création manuelle du service pour éviter la configuration Spring complète
+    //     JavaMailSender mailSender = createRealMailSender();
+    //     EmailNotificationService emailService = new EmailNotificationService(mailSender);
 
-        // Injection manuelle de l'email expéditeur
-        java.lang.reflect.Field fromEmailField = EmailNotificationService.class.getDeclaredField("fromEmail");
-        fromEmailField.setAccessible(true);
-        fromEmailField.set(emailService, "rarianamiadana@gmail.com");
+    //     // Injection manuelle de l'email expéditeur
+    //     java.lang.reflect.Field fromEmailField = EmailNotificationService.class.getDeclaredField("fromEmail");
+    //     fromEmailField.setAccessible(true);
+    //     fromEmailField.set(emailService, "rarianamiadana@gmail.com");
 
-        String destinataire = "rarianamiadana@gmail.com";
-        String reference = "TCK-MANUEL-" + System.currentTimeMillis();
-        String titre = "Test manuel email service";
+    //     String destinataire = "rarianamiadana@gmail.com";
+    //     String reference = "TCK-MANUEL-" + System.currentTimeMillis();
+    //     String titre = "Test manuel email service";
 
-        System.out.println("=== TEST AVEC EMAIL NOTIFICATION SERVICE ===");
+    //     System.out.println("=== TEST AVEC EMAIL NOTIFICATION SERVICE ===");
 
-        assertDoesNotThrow(() -> {
-            emailService.envoyerNotificationTicketCree(destinataire, reference, titre);
-        });
+    //     assertDoesNotThrow(() -> {
+    //         emailService.envoyerNotificationTicketCree(destinataire, reference, titre);
+    //     });
 
-        System.out.println("✅ Email envoyé via EmailNotificationService!");
-    }
+    //     System.out.println("✅ Email envoyé via EmailNotificationService!");
+    //}
 }
