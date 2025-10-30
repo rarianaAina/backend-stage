@@ -1,5 +1,6 @@
 package com.nrstudio.portail.controleurs.workflow;
 
+import com.nrstudio.portail.dto.utilisateur.UtilisateurInterneDto;
 import com.nrstudio.portail.dto.workflow.*;
 import com.nrstudio.portail.services.workflow.WorkflowConfigService;
 import org.springframework.http.ResponseEntity;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/workflow")
@@ -38,7 +40,7 @@ public class WorkflowConfigControleur {
      */
     @GetMapping("/configurations/{typeNotificationCode}")
     public ResponseEntity<?> getWorkflowConfigByType(
-            @PathVariable String typeNotificationCode) {
+            @PathVariable("typeNotificationCode") String typeNotificationCode) {
         try {
             WorkflowConfigDto config = workflowConfigService.getWorkflowConfigByType(typeNotificationCode);
             return ResponseEntity.ok(config);
@@ -72,7 +74,6 @@ public class WorkflowConfigControleur {
             @PathVariable Integer stepId,
             @RequestBody WorkflowStepDto stepDto) {
         try {
-            // S'assurer que l'ID du chemin correspond à l'ID du body
             if (!stepId.equals(stepDto.getId())) {
                 return ResponseEntity.badRequest().body(Map.of("error", "ID incohérent"));
             }
@@ -109,7 +110,7 @@ public class WorkflowConfigControleur {
     @GetMapping("/utilisateurs/internes")
     public ResponseEntity<?> getAvailableUsers() {
         try {
-            List<UserDto> users = workflowConfigService.getAvailableUsers();
+            List<UtilisateurInterneDto> users = workflowConfigService.getAvailableUsers();
             return ResponseEntity.ok(users);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
@@ -142,6 +143,42 @@ public class WorkflowConfigControleur {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Erreur lors de la vérification: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Récupère un utilisateur interne spécifique
+     */
+    @GetMapping("/utilisateurs/internes/{userId}")
+    public ResponseEntity<?> getUtilisateurInterne(@PathVariable Integer userId) {
+        try {
+            Optional<UtilisateurInterneDto> utilisateur = workflowConfigService.getUtilisateurInterneById(userId);
+            if (utilisateur.isPresent()) {
+                return ResponseEntity.ok(utilisateur.get());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Erreur lors de la récupération de l'utilisateur: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Valide un workflow avant sauvegarde
+     */
+    @PostMapping("/configurations/validation")
+    public ResponseEntity<?> validateWorkflowConfig(@RequestBody WorkflowConfigDto configDto) {
+        try {
+            boolean isValid = workflowConfigService.validateWorkflowUsers(configDto.getSteps());
+            if (isValid) {
+                return ResponseEntity.ok(Map.of("valid", true, "message", "Workflow valide"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("valid", false, "message", "Workflow invalide - utilisateurs non valides"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Erreur lors de la validation du workflow: " + e.getMessage()));
         }
     }
 }

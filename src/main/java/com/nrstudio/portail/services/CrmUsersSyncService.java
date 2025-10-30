@@ -1,8 +1,10 @@
 // package com.nrstudio.portail.services;
 
 // import com.nrstudio.portail.depots.UtilisateurRepository;
+// import com.nrstudio.portail.depots.utiisateur.UtilisateurInterneRepository;
 // import com.nrstudio.portail.domaine.Utilisateur;
 // import com.nrstudio.portail.domaine.UtilisateurRole;
+// import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;
 // import com.nrstudio.portail.domaine.Role;
 
 // import org.mindrot.jbcrypt.BCrypt;
@@ -22,11 +24,11 @@
 // public class CrmUsersSyncService {
 
 //   private final JdbcTemplate crmJdbc;
-//   private final UtilisateurRepository utilisateurs;
+//   private final UtilisateurInterneRepository utilisateurs;
 //   private final UtilisateurRoleService utilisateurRoleService;
 
 //   public CrmUsersSyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
-//                              UtilisateurRepository utilisateurs,
+//                              UtilisateurInterneRepository utilisateurs,
 //                              UtilisateurRoleService utilisateurRoleService) {
 //     this.crmJdbc = crmJdbc;
 //     this.utilisateurs = utilisateurs;
@@ -59,7 +61,7 @@
 //       String identifiant = genererIdentifiant(email, userId);
 
 
-//       Utilisateur user = new Utilisateur();
+//       UtilisateurInterne user = new UtilisateurInterne();
 //       user.setIdentifiant(identifiant);
 //       user.setNom(nom);
 //       user.setPrenom(prenom);
@@ -71,18 +73,18 @@
 //       user.setDateMiseAJour(LocalDateTime.now());
 
 //       String motDePasseTemporaire = genererMotDePasseTemporaire();
-//       user.setMotDePasseHash(BCrypt.hashpw(motDePasseTemporaire, BCrypt.gensalt()).getBytes());
+//       //user.setMotDePasseHash(BCrypt.hashpw(motDePasseTemporaire, BCrypt.gensalt()).getBytes());
 
 //       utilisateurs.save(user);
 
 //       Role role = new Role();
-//       role.setId(2); // 2 = Consultant
-//       UtilisateurRole ur = new UtilisateurRole();
-//       ur.setUtilisateur(user);
-//       ur.setRole(role);
-//       ur.setCompany(null); // ou renseigne la company si besoin
-//       utilisateurRoleService.enregistrerUtilisateurRole(ur);
-//       System.out.println("Utilisateur interne créé: " + identifiant + " / Rôle: " + " / MDP temporaire: " + motDePasseTemporaire);
+//       role.setId(2);
+//       //UtilisateurRole ur = new UtilisateurRole();
+//       //ur.setUtilisateur(user);
+//       //ur.setRole(role);
+//       //ur.setCompany(null); // ou renseigne la company si besoin
+//       //utilisateurRoleService.enregistrerUtilisateurRole(ur);
+//       //System.out.println("Utilisateur interne créé: " + identifiant + " / Rôle: " + " / MDP temporaire: " + motDePasseTemporaire);
 //     }
 //   }
 

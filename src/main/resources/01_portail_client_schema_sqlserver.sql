@@ -527,6 +527,20 @@ CREATE INDEX IX_workflow_utilisateur ON workflow_notification_mail(utilisateur_i
 CREATE INDEX IX_type_notification_code ON type_notification(code);
 CREATE INDEX IX_type_notification_template ON type_notification(template_id);
 
+CREATE TABLE configuration_smtp (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    host VARCHAR(255) NOT NULL,
+    port INT NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    password VARCHAR(500) NOT NULL, -- Chiffré de préférence
+    protocol VARCHAR(50) DEFAULT 'smtp',
+    auth_required BIT DEFAULT 1,
+    starttls_enabled BIT DEFAULT 1,
+    ssl_trust VARCHAR(255),
+    est_actif BIT DEFAULT 1,
+    date_creation DATETIME2 DEFAULT GETDATE(),
+    date_modification DATETIME2
+);
 
 -- Vue pour faciliter la consultation du workflow avec toutes les informations
 CREATE VIEW v_workflow_notification_complet AS
@@ -694,8 +708,8 @@ INSERT INTO type_notification (code, libelle, description) VALUES
 -- Insertion de données exemple pour le workflow
 -- Exemple pour la création de ticket : envoi d'abord au créateur, puis au responsable
 INSERT INTO workflow_notification_mail (ordre, utilisateur_id, type_notification_id) VALUES
-(1, 2421, 1),  -- Premier envoi pour création ticket (créateur)
-(2, 1751, 1),  -- Deuxième envoi pour création ticket (responsable)
+(1, 1870, 1),  -- Premier envoi pour création ticket (créateur)
+(2, 1914, 1),  -- Deuxième envoi pour création ticket (responsable)
 
 
 GO

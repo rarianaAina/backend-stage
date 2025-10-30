@@ -11,6 +11,8 @@ import com.nrstudio.portail.domaine.Utilisateur;
 import com.nrstudio.portail.dto.TicketAvecProduitDto;
 import com.nrstudio.portail.dto.TicketAvecProduitPageReponse;
 import com.nrstudio.portail.dto.TicketCreationRequete;
+import com.nrstudio.portail.dto.TicketPageReponse;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -460,6 +462,110 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
   //   }
   // }
 
+public TicketAvecProduitPageReponse listerTicketsAdminAvecPaginationEtFiltres(
+    int page,
+    int size,
+    String etat,
+    String reference,
+    String produit,
+    String dateDebut,
+    String dateFin,
+    String societe,
+    String priorite) {
+
+    Stream<Ticket> ticketStream = tickets.findAll().stream();
+
+    // Filtre par statut
+    if (etat != null && !etat.isEmpty()) {
+        try {
+            Integer statutId = Integer.valueOf(etat);
+            ticketStream = ticketStream.filter(ticket -> statutId.equals(ticket.getStatutTicketId()));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("statut invalide : " + etat);
+        }
+    }
+
+    // Filtre par référence
+    if (reference != null && !reference.isEmpty()) {
+        ticketStream = ticketStream.filter(ticket -> 
+            ticket.getReference() != null &&
+            ticket.getReference().toLowerCase().contains(reference.toLowerCase()));
+    }
+
+    // Filtre par produit
+    if (produit != null && !produit.isEmpty()) {
+        ticketStream = ticketStream.filter(ticket -> {
+            if (ticket.getProduitId() == null) return false;
+            try {
+                Produit produitEntity = produitRepository.findById(ticket.getProduitId()).orElse(null);
+                return produitEntity != null && 
+                       produitEntity.getCodeProduit().toLowerCase().contains(produit.toLowerCase());
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+
+    // Filtre par date début
+    if (dateDebut != null && !dateDebut.isEmpty()) {
+        LocalDate debut = LocalDate.parse(dateDebut);
+        ticketStream = ticketStream.filter(ticket -> {
+            if (ticket.getDateCreation() == null) return false;
+            return !ticket.getDateCreation().toLocalDate().isBefore(debut);
+        });
+    }
+
+    // Filtre par date fin
+    if (dateFin != null && !dateFin.isEmpty()) {
+        LocalDate fin = LocalDate.parse(dateFin);
+        ticketStream = ticketStream.filter(ticket -> {
+            if (ticket.getDateCreation() == null) return false;
+            return !ticket.getDateCreation().toLocalDate().isAfter(fin);
+        });
+    }
+
+    // Filtre par société
+    if (societe != null && !societe.isEmpty()) {
+        ticketStream = ticketStream.filter(ticket -> {
+            if (ticket.getCompanyId() == null) return false;
+            try {
+                Company company = companies.findById(ticket.getCompanyId()).orElse(null);
+                return company != null && 
+                       company.getNom().toLowerCase().contains(societe.toLowerCase());
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+
+    // Filtre par priorité
+    if (priorite != null && !priorite.isEmpty()) {
+        try {
+            Integer prioriteId = Integer.valueOf(priorite);
+            ticketStream = ticketStream.filter(ticket -> prioriteId.equals(ticket.getPrioriteTicketId()));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("priorite invalide : " + priorite);
+        }
+    }
+
+    // Trier par date de création décroissante
+    List<Ticket> ticketsFiltres = ticketStream
+        .sorted((t1, t2) -> t2.getDateCreation().compareTo(t1.getDateCreation()))
+        .toList();
+
+    // Pagination
+    long totalElements = ticketsFiltres.size();
+    int totalPages = (int) Math.ceil((double) totalElements / size);
+
+    // Convertir les tickets en TicketAvecProduitDto
+    List<TicketAvecProduitDto> ticketDtos = ticketsFiltres.stream()
+        .skip(page * size)
+        .limit(size)
+        .map(this::convertirEnAvecProduitDto)
+        .toList();
+
+    return new TicketAvecProduitPageReponse(ticketDtos, page, totalPages, totalElements, size);
+}
   private String truncate(String s, int max) {
     if (s == null) return null;
     return s.length() <= max ? s : s.substring(0, max);

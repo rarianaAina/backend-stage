@@ -3,7 +3,7 @@ package com.nrstudio.portail.controleurs;
 import com.nrstudio.portail.dto.ChartDataDto;
 import com.nrstudio.portail.dto.DashboardAdminDto;
 import com.nrstudio.portail.dto.DashboardClientDto;
-import com.nrstudio.portail.services.DashboardService;
+import com.nrstudio.portail.services.dashboard.DashboardService;
 import com.nrstudio.portail.depots.UtilisateurRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

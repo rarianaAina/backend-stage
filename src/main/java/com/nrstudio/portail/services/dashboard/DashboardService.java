@@ -1,8 +1,12 @@
-package com.nrstudio.portail.services;
+package com.nrstudio.portail.services.dashboard;
 
 import com.nrstudio.portail.depots.*;
+import com.nrstudio.portail.depots.utiisateur.UtilisateurInterneRepository;
 import com.nrstudio.portail.domaine.*;
 import com.nrstudio.portail.dto.*;
+import com.nrstudio.portail.services.CreditHoraireService;
+import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;
+
 
 import lombok.ToString;
 
@@ -24,45 +28,23 @@ public class DashboardService {
   private final CompanyRepository companyRepository;
   private final ProduitRepository produitRepository;
   private final CreditHoraireService creditHoraireService;
+  private final UtilisateurInterneRepository utilisateurInterneRepository;
 
   public DashboardService(TicketRepository ticketRepository,
                          InterventionRepository interventionRepository,
                          UtilisateurRepository utilisateurRepository,
                          CompanyRepository companyRepository,
                          ProduitRepository produitRepository,
-                         CreditHoraireService creditHoraireService) {
+                         CreditHoraireService creditHoraireService,
+                         UtilisateurInterneRepository utilisateurInterneRepository) {
     this.ticketRepository = ticketRepository;
     this.interventionRepository = interventionRepository;
     this.utilisateurRepository = utilisateurRepository;
     this.companyRepository = companyRepository;
     this.produitRepository = produitRepository;
     this.creditHoraireService = creditHoraireService;
+    this.utilisateurInterneRepository = utilisateurInterneRepository;
   }
-
-  // public DashboardClientDto getDashboardClient(Integer userId) {
-  //   Utilisateur utilisateur = utilisateurRepository.findById(userId)
-  //     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-
-  //   Integer companyId = getCompanyIdForUser(userId);
-  //   if (companyId == null) {
-  //     throw new RuntimeException("Company non trouvée pour cet utilisateur");
-  //   }
-
-  //   DashboardClientDto dashboard = new DashboardClientDto();
-    
-  //   List<Ticket> tickets = ticketRepository.findByCompanyId(companyId);
-    
-  //   dashboard.setStatistiquesTickets(calculerStatistiquesTickets(tickets));
-  //   dashboard.setCreditsHoraires(creditHoraireService.getCreditsActifs(companyId));
-  //   dashboard.setTicketsRecents(getTicketsRecents(tickets, 10));
-  //   dashboard.setInterventionsProchaines(getInterventionsProchaines(companyId, 10));
-  //   dashboard.setTicketsParStatut(repartitionParStatut(tickets));
-  //   dashboard.setTicketsParPriorite(repartitionParPriorite(tickets));
-  //   dashboard.setTicketsParProduit(repartitionParProduit(tickets));
-  //   dashboard.setDureesMoyennes(calculerDureesTraitement(tickets));
-
-  //   return dashboard;
-  // }
 
     public DashboardClientDto getDashboardClient(Integer userId) {
       Utilisateur utilisateur = utilisateurRepository.findById(userId)
@@ -151,7 +133,7 @@ public class DashboardService {
     stats.setTicketsClotures((int) allTickets.stream()
       .filter(t -> t.getStatutTicketId() == 7).count());
     stats.setTotalCompanies((int) companyRepository.count());
-    stats.setTotalConsultants((int) utilisateurRepository.count());
+    stats.setTotalConsultants((int) utilisateurInterneRepository.count());
     stats.setInterventionsPlanifiees((int) interventionRepository.findAll().stream()
       .filter(i -> i.getStatutInterventionId() == 2).count());
     
@@ -178,17 +160,6 @@ public class DashboardService {
     return repartition;
   }
 
-  // private Map<String, Integer> repartitionParProduit(List<Ticket> tickets) {
-  //   return tickets.stream()
-  //     .filter(t -> t.getProduitId() != null)
-  //     .collect(Collectors.groupingBy(
-  //       t -> {
-  //         Produit p = produitRepository.findById(t.getProduitId()).orElse(null);
-  //         return p != null ? p.getLibelle() : "Non spécifié";
-  //       },
-  //       Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
-  //     ));
-  // }
 
   private Map<String, Integer> repartitionParProduit(List<Ticket> tickets) {
     System.out.println("=== DEBUG repartitionParProduit ===");
@@ -329,10 +300,10 @@ public class DashboardService {
   }
 
   private Map<String, ConsultantPerformanceDto> calculerPerformancesConsultants() {
-    List<Utilisateur> consultants = utilisateurRepository.findAll();
+    List<UtilisateurInterne> consultants = utilisateurInterneRepository.findAll();
     Map<String, ConsultantPerformanceDto> performances = new HashMap<>();
 
-    for (Utilisateur consultant : consultants) {
+    for (UtilisateurInterne consultant : consultants) {
       List<Ticket> ticketsConsultant = ticketRepository
         .findByAffecteAUtilisateurId(consultant.getId());
 

@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface UtilisateurRoleRepository extends JpaRepository<UtilisateurRole, Integer> {
+       @Query("SELECT ur.utilisateur.id FROM UtilisateurRole ur WHERE ur.utilisateur.id IN :userIds AND ur.role.id IN (2, 3)")
+       List<Integer> findInternalUserIds(@Param("userIds") List<Integer> userIds);
     @Query("SELECT ur FROM UtilisateurRole ur WHERE ur.utilisateur.id = :utilisateurId")
     List<UtilisateurRole> findByUtilisateurId(@Param("utilisateurId") Integer utilisateurId);
     
@@ -21,5 +23,7 @@ public interface UtilisateurRoleRepository extends JpaRepository<UtilisateurRole
            "AND ur.role.id IN :roleIds")
     boolean existsByUtilisateurIdAndRoleIdIn(@Param("utilisateurId") Integer utilisateurId, 
                                            @Param("roleIds") List<Integer> roleIds);
+
+
 
 }

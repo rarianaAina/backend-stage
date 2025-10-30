@@ -1,59 +1,60 @@
 package com.nrstudio.portail.services.workflow;
 
 import com.nrstudio.portail.depots.*;
+import com.nrstudio.portail.depots.utiisateur.UtilisateurInterneRepository;
+import com.nrstudio.portail.depots.workflow.WorkflowNotificationViewRepository;
 import com.nrstudio.portail.domaine.*;
+import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;
+import com.nrstudio.portail.dto.utilisateur.UtilisateurInterneDto;
 import com.nrstudio.portail.dto.workflow.*;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.function.Function;
 
 @Service
 public class WorkflowConfigService {
     
     private final WorkflowNotificationMailRepository workflowRepository;
     private final TypeNotificationRepository typeNotificationRepository;
-    private final UtilisateurRepository utilisateurRepository;
-    private final UtilisateurRoleRepository utilisateurRoleRepository;
+    private final UtilisateurInterneRepository utilisateurInterneRepository;
+    private final WorkflowNotificationViewRepository workflowViewRepository;
     
     public WorkflowConfigService(WorkflowNotificationMailRepository workflowRepository,
                                TypeNotificationRepository typeNotificationRepository,
-                               UtilisateurRepository utilisateurRepository,
-                               UtilisateurRoleRepository utilisateurRoleRepository) {
+                               UtilisateurInterneRepository utilisateurInterneRepository,
+                               WorkflowNotificationViewRepository workflowViewRepository) {
         this.workflowRepository = workflowRepository;
         this.typeNotificationRepository = typeNotificationRepository;
-        this.utilisateurRepository = utilisateurRepository;
-        this.utilisateurRoleRepository = utilisateurRoleRepository;
+        this.utilisateurInterneRepository = utilisateurInterneRepository;
+        this.workflowViewRepository = workflowViewRepository;
     }
     
     /**
-     * Récupère tous les workflows de notification configurés
+     * Récupère tous les workflows de notification configurés - VERSION OPTIMISÉE
      */
     public List<WorkflowConfigDto> getAllWorkflowConfigs() {
         try {
-            List<TypeNotification> types = typeNotificationRepository.findAllActifs();
-            return types.stream()
-                    .map(this::convertToWorkflowConfigDto)
-                    .collect(Collectors.toList());
+            List<Object[]> results = workflowViewRepository.findCompleteActiveWorkflows();
+            return transformResultsToWorkflowConfigs(results);
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la récupération des workflows", e);
         }
     }
     
     /**
-     * Récupère un workflow spécifique par type de notification
+     * Récupère un workflow spécifique par type de notification - VERSION OPTIMISÉE
      */
     public WorkflowConfigDto getWorkflowConfigByType(String typeNotificationCode) {
         try {
-            Optional<TypeNotification> typeOpt = typeNotificationRepository.findByCode(typeNotificationCode);
-            if (typeOpt.isEmpty()) {
-                return new WorkflowConfigDto(typeNotificationCode, new ArrayList<>());
-            }
-            return convertToWorkflowConfigDto(typeOpt.get());
+            List<Object[]> results = workflowViewRepository.findActiveByTypeNotificationCode(typeNotificationCode);
+            List<WorkflowStepDto> stepDtos = results.stream()
+                    .map(this::createWorkflowStepDto)
+                    .collect(Collectors.toList());
+            
+            return new WorkflowConfigDto(typeNotificationCode, stepDtos);
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la récupération du workflow pour le type: " + typeNotificationCode, e);
         }
@@ -62,7 +63,6 @@ public class WorkflowConfigService {
     /**
      * Sauvegarde un workflow de notification
      */
-
     @Transactional
     public void saveWorkflowConfig(WorkflowConfigDto configDto) {
         try {
@@ -71,118 +71,44 @@ public class WorkflowConfigService {
                 throw new IllegalArgumentException("Type de notification non trouvé: " + configDto.getTypeNotificationCode());
             }
             
-            // Valider que tous les utilisateurs sont internes
+            // Valider que tous les utilisateurs existent dans utilisateur_interne
             if (!validateWorkflowUsers(configDto.getSteps())) {
-                throw new IllegalArgumentException("Un ou plusieurs utilisateurs ne sont pas des utilisateurs internes valides (rôles 2 ou 3 requis)");
+                throw new IllegalArgumentException("Un ou plusieurs utilisateurs ne sont pas des utilisateurs internes valides");
             }
             
             TypeNotification typeNotification = typeOpt.get();
             
-            // Récupérer les étapes existantes
-            List<WorkflowNotificationMail> existingSteps = workflowRepository.findByTypeNotificationIdActif(typeNotification.getId());
-            Map<Integer, WorkflowNotificationMail> existingStepsMap = existingSteps.stream()
-                    .collect(Collectors.toMap(WorkflowNotificationMail::getId, Function.identity()));
+            // Supprimer les anciennes étapes
+            workflowRepository.deleteByTypeNotificationId(typeNotification.getId());
             
-            // Map pour suivre les étapes à conserver
-            Set<Integer> stepsToKeep = new HashSet<>();
-            
-            // Traiter chaque étape du DTO
+            // Sauvegarder les nouvelles étapes
             for (WorkflowStepDto stepDto : configDto.getSteps()) {
-                if (stepDto.getId() != null && stepDto.getId() > 0) {
-                    // Étape existante - mise à jour
-                    WorkflowNotificationMail existingStep = existingStepsMap.get(stepDto.getId());
-                    if (existingStep != null) {
-                        existingStep.setOrdre(stepDto.getOrdre());
-                        existingStep.setUtilisateurId(stepDto.getUtilisateurId());
-                        existingStep.setDateModification(LocalDateTime.now());
-                        workflowRepository.save(existingStep);
-                        stepsToKeep.add(existingStep.getId());
-                    }
-                } else {
-                    // Nouvelle étape - création
-                    WorkflowNotificationMail newStep = new WorkflowNotificationMail();
-                    newStep.setOrdre(stepDto.getOrdre());
-                    newStep.setUtilisateurId(stepDto.getUtilisateurId());
-                    newStep.setTypeNotification(typeNotification);
-                    newStep.setEstActif(true);
-                    newStep.setDateCreation(LocalDateTime.now());
-                    
-                    WorkflowNotificationMail savedStep = workflowRepository.save(newStep);
-                    stepsToKeep.add(savedStep.getId());
-                }
+                WorkflowNotificationMail workflow = new WorkflowNotificationMail();
+                workflow.setOrdre(stepDto.getOrdre());
+                workflow.setUtilisateurId(stepDto.getUtilisateurId());
+                workflow.setTypeNotification(typeNotification);
+                workflow.setEstActif(true);
+                workflow.setDateCreation(LocalDateTime.now());
+                
+                workflowRepository.save(workflow);
             }
-            
-            // Supprimer les étapes qui ne sont plus dans la configuration
-            for (WorkflowNotificationMail existingStep : existingSteps) {
-                if (!stepsToKeep.contains(existingStep.getId())) {
-                    workflowRepository.delete(existingStep);
-                }
-            }
-            
         } catch (IllegalArgumentException e) {
-            throw e; // Propager les erreurs de validation
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la sauvegarde du workflow", e);
         }
     }
-    // @Transactional
-    // public void saveWorkflowConfig(WorkflowConfigDto configDto) {
-    //     try {
-    //         Optional<TypeNotification> typeOpt = typeNotificationRepository.findByCode(configDto.getTypeNotificationCode());
-    //         if (typeOpt.isEmpty()) {
-    //             throw new IllegalArgumentException("Type de notification non trouvé: " + configDto.getTypeNotificationCode());
-    //         }
-            
-    //         // Valider que tous les utilisateurs sont internes
-    //         if (!validateWorkflowUsers(configDto.getSteps())) {
-    //             throw new IllegalArgumentException("Un ou plusieurs utilisateurs ne sont pas des utilisateurs internes valides (rôles 2 ou 3 requis)");
-    //         }
-            
-    //         TypeNotification typeNotification = typeOpt.get();
-            
-    //         // Supprimer les anciennes étapes
-    //         workflowRepository.deleteByTypeNotificationId(typeNotification.getId());
-            
-    //         // Sauvegarder les nouvelles étapes
-    //         for (WorkflowStepDto stepDto : configDto.getSteps()) {
-    //             WorkflowNotificationMail workflow = new WorkflowNotificationMail();
-    //             workflow.setOrdre(stepDto.getOrdre());
-    //             workflow.setUtilisateurId(stepDto.getUtilisateurId());
-    //             workflow.setTypeNotification(typeNotification);
-    //             workflow.setEstActif(true);
-    //             workflow.setDateCreation(LocalDateTime.now());
-                
-    //             workflowRepository.save(workflow);
-    //         }
-    //     } catch (IllegalArgumentException e) {
-    //         throw e; // Propager les erreurs de validation
-    //     } catch (Exception e) {
-    //         throw new RuntimeException("Erreur lors de la sauvegarde du workflow", e);
-    //     }
-    // }
-
     
     /**
-     * Récupère la liste des utilisateurs internes (rôles 2 ou 3)
+     * Récupère la liste des utilisateurs internes
      */
-    public List<UserDto> getAvailableUsers() {
-    try {
-        // Récupérer tous les utilisateurs actifs
-        List<Utilisateur> allUsers = utilisateurRepository.findAllUtilisateurs();
-        
-        // Filtrer pour ne garder que les utilisateurs internes
-        return allUsers.stream()
-                .filter(user -> isUtilisateurInterne(user.getId()))
-                .map(user -> {
-                    String nomComplet = (user.getPrenom() != null && !user.getPrenom().isEmpty() ? 
-                                       user.getPrenom() + " " + user.getNom() : user.getNom());
-                    return new UserDto(user.getId(), nomComplet, user.getEmail());
-                })
-                .collect(Collectors.toList());
-    } catch (Exception e) {
-        throw new RuntimeException("Erreur lors de la récupération des utilisateurs internes", e);
+    public List<UtilisateurInterneDto> getAvailableUsers() {
+        try {
+            return utilisateurInterneRepository.findAllUtilisateurs();
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la récupération des utilisateurs internes", e);
+        }
     }
-}
     
     /**
      * Récupère tous les types de notification actifs
@@ -198,31 +124,35 @@ public class WorkflowConfigService {
     }
     
     /**
-     * Vérifie si un utilisateur est interne (a un rôle 2 ou 3)
+     * Vérifie si un utilisateur existe dans utilisateur_interne
      */
     public boolean isUtilisateurInterne(Integer utilisateurId) {
         try {
-            return utilisateurRoleRepository.existsByUtilisateurIdAndRoleIdIn(
-                utilisateurId, Arrays.asList(2, 3));
+            return utilisateurInterneRepository.existsById(utilisateurId);
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la vérification de l'utilisateur interne", e);
         }
     }
     
     /**
-     * Valide que tous les utilisateurs dans le workflow sont bien des utilisateurs internes
+     * Valide que tous les utilisateurs dans le workflow existent dans utilisateur_interne
      */
     public boolean validateWorkflowUsers(List<WorkflowStepDto> steps) {
         if (steps == null || steps.isEmpty()) {
             return true;
         }
         
-        for (WorkflowStepDto step : steps) {
-            if (!isUtilisateurInterne(step.getUtilisateurId())) {
-                return false;
-            }
+        List<Integer> userIds = steps.stream()
+                .map(WorkflowStepDto::getUtilisateurId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        if (userIds.isEmpty()) {
+            return true;
         }
-        return true;
+        
+        long existingUsersCount = utilisateurInterneRepository.countByIdIn(userIds);
+        return existingUsersCount == userIds.size();
     }
     
     /**
@@ -236,7 +166,6 @@ public class WorkflowConfigService {
                 throw new IllegalArgumentException("Étape de workflow non trouvée: " + stepDto.getId());
             }
             
-            // Valider que l'utilisateur est interne
             if (!isUtilisateurInterne(stepDto.getUtilisateurId())) {
                 throw new IllegalArgumentException("L'utilisateur n'est pas un utilisateur interne valide");
             }
@@ -271,36 +200,62 @@ public class WorkflowConfigService {
         }
     }
     
-    // Méthodes de conversion privées
+    // Méthodes privées pour le mapping
     
-    private WorkflowConfigDto convertToWorkflowConfigDto(TypeNotification typeNotification) {
-        List<WorkflowNotificationMail> workflowSteps = workflowRepository
-                .findByTypeNotificationIdActif(typeNotification.getId());
-        
-        List<WorkflowStepDto> stepDtos = workflowSteps.stream()
-                .map(this::convertToWorkflowStepDto)
+    private List<WorkflowConfigDto> transformResultsToWorkflowConfigs(List<Object[]> results) {
+        Map<String, List<WorkflowStepDto>> workflowsByType = new LinkedHashMap<>();
+
+        for (Object[] row : results) {
+            String typeCode = getStringValue(row[0]);
+            WorkflowStepDto stepDto = createWorkflowStepDto(row);
+            
+            workflowsByType
+                .computeIfAbsent(typeCode, k -> new ArrayList<>())
+                .add(stepDto);
+        }
+
+        return workflowsByType.entrySet().stream()
+                .map(entry -> new WorkflowConfigDto(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
-        
-        return new WorkflowConfigDto(typeNotification.getCode(), stepDtos);
     }
     
-    private WorkflowStepDto convertToWorkflowStepDto(WorkflowNotificationMail workflow) {
-        WorkflowStepDto dto = new WorkflowStepDto();
-        dto.setId(workflow.getId());
-        dto.setOrdre(workflow.getOrdre());
-        dto.setUtilisateurId(workflow.getUtilisateurId());
-        dto.setTypeNotificationId(workflow.getTypeNotification().getId());
-        dto.setTypeNotificationLibelle(workflow.getTypeNotification().getLibelle());
+    private WorkflowStepDto createWorkflowStepDto(Object[] row) {
+        WorkflowStepDto stepDto = new WorkflowStepDto();
         
-        // Charger le nom complet de l'utilisateur
-        Optional<Utilisateur> userOpt = utilisateurRepository.findById(workflow.getUtilisateurId());
-        if (userOpt.isPresent()) {
-            Utilisateur user = userOpt.get();
-            String nomComplet = (user.getPrenom() != null ? user.getPrenom() + " " : "") + user.getNom();
-            dto.setUtilisateurNom(nomComplet);
+        stepDto.setId(getIntegerValue(row[1]));
+        stepDto.setOrdre(getIntegerValue(row[2]));
+        stepDto.setUtilisateurId(getIntegerValue(row[3]));
+        
+        String nom = getStringValue(row[4]);
+        String prenom = getStringValue(row[5]);
+        if (nom != null && prenom != null) {
+            stepDto.setUtilisateurNom(prenom + " " + nom);
+        } else if (nom != null) {
+            stepDto.setUtilisateurNom(nom);
+        } else if (prenom != null) {
+            stepDto.setUtilisateurNom(prenom);
         }
         
-        return dto;
+        stepDto.setTypeNotificationId(getIntegerValue(row[7]));
+        stepDto.setTypeNotificationLibelle(getStringValue(row[8]));
+        
+        return stepDto;
+    }
+    
+    private String getStringValue(Object value) {
+        return value != null ? value.toString() : null;
+    }
+    
+    private Integer getIntegerValue(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
     
     private TypeNotificationDto convertToTypeNotificationDto(TypeNotification type) {
@@ -309,6 +264,41 @@ public class WorkflowConfigService {
         dto.setCode(type.getCode());
         dto.setLibelle(type.getLibelle());
         dto.setDescription(type.getDescription());
+        return dto;
+    }
+    
+    /**
+     * Récupère un utilisateur interne par son ID
+     */
+    public Optional<UtilisateurInterneDto> getUtilisateurInterneById(Integer id) {
+        try {
+            Optional<UtilisateurInterne> utilisateurOpt = utilisateurInterneRepository.findById(id);
+            return utilisateurOpt.map(this::convertToUtilisateurInterneDto);
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la récupération de l'utilisateur interne", e);
+        }
+    }
+    
+    private UtilisateurInterneDto convertToUtilisateurInterneDto(UtilisateurInterne utilisateur) {
+        UtilisateurInterneDto dto = new UtilisateurInterneDto();
+        dto.setId(utilisateur.getId());
+        dto.setCompanyId(utilisateur.getCompanyId());
+        dto.setIdExterneCrm(utilisateur.getIdExterneCrm());
+        dto.setIdentifiant(utilisateur.getIdentifiant());
+        dto.setNom(utilisateur.getNom());
+        dto.setPrenom(utilisateur.getPrenom());
+        dto.setEmail(utilisateur.getEmail());
+        dto.setTelephone(utilisateur.getTelephone());
+        dto.setWhatsappNumero(utilisateur.getWhatsappNumero());
+        dto.setActif(utilisateur.isActif());
+        dto.setDateDerniereConnexion(utilisateur.getDateDerniereConnexion());
+        dto.setDateCreation(utilisateur.getDateCreation());
+        dto.setDateMiseAJour(utilisateur.getDateMiseAJour());
+        
+        if (utilisateur.getCompany() != null) {
+            dto.setCompanyName(utilisateur.getCompany().getNom());
+        }
+        
         return dto;
     }
 }

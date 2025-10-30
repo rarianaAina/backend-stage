@@ -38,6 +38,35 @@ public class TicketControleur {
     return repo.findAll();
   }
 
+  // Endpoint pour l'admin avec pagination et filtres
+@GetMapping("/admin")
+public TicketAvecProduitPageReponse listerTicketsAdmin(
+    @RequestParam(value = "page", defaultValue = "0") int page,
+    @RequestParam(value = "size", defaultValue = "10") int size,
+    @RequestParam(value = "etat", required = false) String etat,
+    @RequestParam(value = "reference", required = false) String reference,
+    @RequestParam(value = "produit", required = false) String produit,
+    @RequestParam(value = "dateDebut", required = false) String dateDebut,
+    @RequestParam(value = "dateFin", required = false) String dateFin,
+    @RequestParam(value = "societe", required = false) String societe,
+    @RequestParam(value = "priorite", required = false) String priorite) {
+
+    System.out.println("Récupération des tickets admin avec filtres:");
+    System.out.println("Page: " + page + ", Size: " + size);
+    System.out.println("État: " + etat + ", Référence: " + reference);
+    System.out.println("Produit: " + produit + ", Société: " + societe);
+    System.out.println("Priorité: " + priorite);
+    System.out.println("Date début: " + dateDebut + ", Date fin: " + dateFin);
+
+    TicketAvecProduitPageReponse response = service.listerTicketsAdminAvecPaginationEtFiltres(
+        page, size, etat, reference, produit, dateDebut, dateFin, societe, priorite);
+
+    System.out.println("Total éléments: " + response.getTotalElements());
+    System.out.println("Total pages: " + response.getTotalPages());
+    System.out.println("Tickets retournés: " + response.getTickets().size());
+
+    return response;
+}
   //Ticket par utilisateur
   @GetMapping("/utilisateur/{utilisateurId}")
   public List<Ticket> listerParUtilisateur(@PathVariable("utilisateurId") Integer utilisateurId) {
@@ -48,39 +77,6 @@ public class TicketControleur {
     return tickets;
   }
 
-  //Ticket par utilisateur avec pagination
-
-  // @GetMapping("/utilisateur/{utilisateurId}/page/{page}/size/{size}")
-  // public TicketPageReponse listerParUtilisateurAvecPagination(
-  //     @PathVariable("utilisateurId") Integer utilisateurId,
-  //     @PathVariable("page") Integer page,
-  //     @PathVariable("size") Integer size,
-  //     @RequestParam(value = "etat", required = false) String etat,
-  //     @RequestParam(value = "reference", required = false) String reference,
-  //     @RequestParam(value = "produit", required = false) String produit,
-  //     @RequestParam(value = "dateDebut", required = false) String dateDebut,
-  //     @RequestParam(value = "dateFin", required = false) String dateFin) {
-
-  //   List<Ticket> tickets = service.listerTicketsUtilisateurAvecPaginationEtFiltres(
-  //       utilisateurId, page, size, etat, reference, produit, dateDebut, dateFin);
-
-  //   System.out.println(tickets.toString());
-  //   Long totalElements = service.countTicketsUtilisateurAvecFiltres(
-  //       utilisateurId, etat, reference, produit, dateDebut, dateFin);
-  //   int totalPages = (int) Math.ceil((double) totalElements / size);
-    
-  //   System.out.println("Total elements: " + totalElements);
-  //   System.out.println("Total pages: " + totalPages);
-
-  //   TicketPageReponse response = new TicketPageReponse();
-  //   response.setTickets(tickets);
-  //   response.setCurrentPage(page);
-  //   response.setTotalPages(totalPages);
-  //   response.setTotalElements(totalElements);
-  //   response.setPageSize(size);
-
-  //   return response;
-  // }
 
   @GetMapping("/utilisateur/{utilisateurId}/page/{page}/size/{size}")
   public TicketAvecProduitPageReponse listerParUtilisateurAvecPagination(
@@ -138,13 +134,6 @@ public class TicketControleur {
       System.out.println("Produit Nom: " + ticketAvecDetails.getProduitNom());
       return ticketAvecDetails;
   }
-
-  // @PostMapping
-  // public String creer(@RequestBody TicketCreationRequete req) {
-  //   System.out.println(req);
-  //   return "OK";
-  //   //return service.creerEtSynchroniser(req); 
-  // }
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public Ticket creer(@ModelAttribute TicketCreationRequete req) {
