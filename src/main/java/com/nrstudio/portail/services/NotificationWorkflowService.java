@@ -5,6 +5,8 @@ import com.nrstudio.portail.domaine.*;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
+import com.nrstudio.portail.depots.utilisateur.UtilisateurInterneRepository;
+import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;
 
 @Service
 public class NotificationWorkflowService {
@@ -13,6 +15,7 @@ public class NotificationWorkflowService {
     private final TypeNotificationRepository typeNotificationRepository;
     private final NotificationTemplateRepository templateRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final UtilisateurInterneRepository utilisateurInterneRepository; // Nouveau repository
     private final EmailNotificationService emailService;
     private final WhatsAppNotificationService whatsAppService;
     
@@ -20,78 +23,85 @@ public class NotificationWorkflowService {
                                      TypeNotificationRepository typeNotificationRepository,
                                      NotificationTemplateRepository templateRepository,
                                      UtilisateurRepository utilisateurRepository,
+                                     UtilisateurInterneRepository utilisateurInterneRepository, // Nouveau
                                      EmailNotificationService emailService,
                                      WhatsAppNotificationService whatsAppService) {
         this.workflowRepository = workflowRepository;
         this.typeNotificationRepository = typeNotificationRepository;
         this.templateRepository = templateRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.utilisateurInterneRepository = utilisateurInterneRepository; // Initialisation
         this.emailService = emailService;
         this.whatsAppService = whatsAppService;
     }
     
     /**
      * Exécute le workflow de notification pour un type donné
-     * 1. Notifie toujours le créateur du ticket
-     * 2. Notifie les utilisateurs supplémentaires selon le workflow configuré
+     * 1. Notifie toujours le créateur du ticket (dans table utilisateur)
+     * 2. Notifie les utilisateurs supplémentaires selon le workflow configuré (dans table utilisateur_interne)
      */
     public void executerWorkflowNotification(String typeNotificationCode, Ticket ticket, Object... parametres) {
         
         System.out.println("=== DÉBUT exécuterWorkflowNotification ===");
-        // 1. TOUJOURS notifier le créateur du ticket (OBLIGATOIRE)
+        
+        // 1. TOUJOURS notifier le créateur du ticket (OBLIGATOIRE) - Table utilisateur
         notifierCreateurTicket(ticket, typeNotificationCode, parametres);
         System.out.println("Notifié le créateur du ticket: " + ticket.getCreeParUtilisateurId());
-        // 2. Notifications supplémentaires selon le workflow configuré
+        
+        // 2. Notifications supplémentaires selon le workflow configuré - Table utilisateur_interne
         List<WorkflowNotificationMail> workflowSteps = workflowRepository
             .findByTypeNotificationCodeActif(typeNotificationCode);
         System.out.println("Nombre d'étapes dans le workflow: " + workflowSteps.size());
+        
         for (WorkflowNotificationMail step : workflowSteps) {
             // Éviter les doublons avec le créateur
             if (!step.getUtilisateurId().equals(ticket.getCreeParUtilisateurId())) {
-                System.out.println("Notifiant l'utilisateur workflow: " + step.getUtilisateurId());
+                System.out.println("Notifiant l'utilisateur interne workflow: " + step.getUtilisateurId());
                 envoyerNotificationSelonWorkflow(step, ticket, parametres);
-                System.out.println("Notification envoyée à l'utilisateur workflow: " + step.getUtilisateurId());
+                System.out.println("Notification envoyée à l'utilisateur interne workflow: " + step.getUtilisateurId());
             }
         }
     }
     
     /**
-     * Notification obligatoire au créateur du ticket
+     * Notification obligatoire au créateur du ticket (table utilisateur)
      */
     private void notifierCreateurTicket(Ticket ticket, String typeNotificationCode, Object... parametres) {
-        // Récupérer le créateur du ticket
+        // Récupérer le créateur du ticket depuis la table utilisateur
         Optional<Utilisateur> createurOpt = utilisateurRepository.findByIdExterneCrm(ticket.getClientId().toString());
 
         if (createurOpt.isEmpty()) {
             System.err.println("Créateur du ticket non trouvé: " + ticket.getClientId());
             return;
         }
+        
         System.out.println("Client: " + ticket.getClientId());
         Utilisateur createur = createurOpt.get();
         System.out.println("Créateur du ticket trouvé: " + createur.getEmail());
+        
         // Récupérer le template si disponible
         Optional<NotificationTemplate> templateOpt = getTemplateForNotification(typeNotificationCode);
         
         // Appliquer la logique de notification selon le type
         switch (typeNotificationCode) {
             case "CREATION_TICKET":
-                envoyerNotificationCreationTicket(createur, ticket, templateOpt);
+                envoyerNotificationCreationTicket(createur, null, ticket, templateOpt);
                 break;
                 
             case "MODIFICATION_STATUT_TICKET":
                 if (parametres.length >= 2) {
                     Integer ancienStatutId = (Integer) parametres[0];
                     Integer nouveauStatutId = (Integer) parametres[1];
-                    envoyerNotificationChangementStatut(createur, ticket, ancienStatutId, nouveauStatutId, templateOpt);
+                    envoyerNotificationChangementStatut(createur, null, ticket, ancienStatutId, nouveauStatutId, templateOpt);
                 }
                 break;
                 
             case "AJOUT_SOLUTION":
-                envoyerNotificationAjoutSolution(createur, ticket, templateOpt);
+                envoyerNotificationAjoutSolution(createur, null, ticket, templateOpt);
                 break;
                 
             case "CLOTURE_TICKET":
-                envoyerNotificationClotureTicket(createur, ticket, templateOpt);
+                envoyerNotificationClotureTicket(createur, null, ticket, templateOpt);
                 break;
                 
             default:
@@ -100,83 +110,98 @@ public class NotificationWorkflowService {
     }
     
     /**
-     * Notification pour les utilisateurs du workflow
+     * Notification pour les utilisateurs internes du workflow (table utilisateur_interne)
      */
     private void envoyerNotificationSelonWorkflow(WorkflowNotificationMail step, Ticket ticket, Object... parametres) {
-        Optional<Utilisateur> utilisateurOpt = utilisateurRepository.findById(step.getUtilisateurId());
-        if (utilisateurOpt.isEmpty()) {
-            System.err.println("Utilisateur workflow non trouvé: " + step.getUtilisateurId());
-            return;
-        }
+        // Rechercher d'abord dans utilisateur_interne
+        Optional<UtilisateurInterne> utilisateurInterneOpt = utilisateurInterneRepository.findById(step.getUtilisateurId());
         
-        Utilisateur utilisateur = utilisateurOpt.get();
-        TypeNotification typeNotification = step.getTypeNotification();
-        Optional<NotificationTemplate> templateOpt = getTemplateForNotification(typeNotification.getCode());
-        
-        switch (typeNotification.getCode()) {
-            case "CREATION_TICKET":
-                envoyerNotificationCreationTicket(utilisateur, ticket, templateOpt);
-                break;
+        if (utilisateurInterneOpt.isPresent()) {
+            // Utilisateur trouvé dans la table utilisateur_interne
+            UtilisateurInterne utilisateurInterne = utilisateurInterneOpt.get();
+            TypeNotification typeNotification = step.getTypeNotification();
+            Optional<NotificationTemplate> templateOpt = getTemplateForNotification(typeNotification.getCode());
+            
+            switch (typeNotification.getCode()) {
+                case "CREATION_TICKET":
+                    envoyerNotificationCreationTicket(null, utilisateurInterne, ticket, templateOpt);
+                    break;
+                    
+                case "MODIFICATION_STATUT_TICKET":
+                    if (parametres.length >= 2) {
+                        Integer ancienStatutId = (Integer) parametres[0];
+                        Integer nouveauStatutId = (Integer) parametres[1];
+                        envoyerNotificationChangementStatut(null, utilisateurInterne, ticket, ancienStatutId, nouveauStatutId, templateOpt);
+                    }
+                    break;
+                    
+                case "AJOUT_SOLUTION":
+                    envoyerNotificationAjoutSolution(null, utilisateurInterne, ticket, templateOpt);
+                    break;
+                    
+                case "CLOTURE_TICKET":
+                    envoyerNotificationClotureTicket(null, utilisateurInterne, ticket, templateOpt);
+                    break;
+                    
+                default:
+                    System.err.println("Type de notification non géré: " + typeNotification.getCode());
+            }
+        } else {
+            // Fallback : chercher dans utilisateur (au cas où)
+            Optional<Utilisateur> utilisateurOpt = utilisateurRepository.findById(step.getUtilisateurId());
+            if (utilisateurOpt.isPresent()) {
+                Utilisateur utilisateur = utilisateurOpt.get();
+                TypeNotification typeNotification = step.getTypeNotification();
+                Optional<NotificationTemplate> templateOpt = getTemplateForNotification(typeNotification.getCode());
                 
-            case "MODIFICATION_STATUT_TICKET":
-                if (parametres.length >= 2) {
-                    Integer ancienStatutId = (Integer) parametres[0];
-                    Integer nouveauStatutId = (Integer) parametres[1];
-                    envoyerNotificationChangementStatut(utilisateur, ticket, ancienStatutId, nouveauStatutId, templateOpt);
+                switch (typeNotification.getCode()) {
+                    case "CREATION_TICKET":
+                        envoyerNotificationCreationTicket(utilisateur, null, ticket, templateOpt);
+                        break;
+                    // ... autres cas similaires
                 }
-                break;
-                
-            case "AJOUT_SOLUTION":
-                envoyerNotificationAjoutSolution(utilisateur, ticket, templateOpt);
-                break;
-                
-            case "CLOTURE_TICKET":
-                envoyerNotificationClotureTicket(utilisateur, ticket, templateOpt);
-                break;
-                
-            default:
-                System.err.println("Type de notification non géré: " + typeNotification.getCode());
+            } else {
+                System.err.println("Utilisateur workflow non trouvé (ni dans utilisateur_interne ni dans utilisateur): " + step.getUtilisateurId());
+            }
         }
     }
     
     /**
-     * Récupère le template associé à un type de notification
+     * Envoi notification création de ticket (version avec les deux types d'utilisateurs)
      */
-    private Optional<NotificationTemplate> getTemplateForNotification(String typeNotificationCode) {
-        Optional<TypeNotification> typeOpt = typeNotificationRepository.findByCode(typeNotificationCode);
-        if (typeOpt.isPresent() && typeOpt.get().getTemplateId() != null) {
-            return templateRepository.findById(typeOpt.get().getTemplateId());
-        }
-        return Optional.empty();
-    }
-    
-    /**
-     * Envoi notification création de ticket
-     */
-    private void envoyerNotificationCreationTicket(Utilisateur utilisateur, Ticket ticket, Optional<NotificationTemplate> templateOpt) {
-        if (utilisateur.getEmail() != null) {
+    private void envoyerNotificationCreationTicket(Utilisateur utilisateur, UtilisateurInterne utilisateurInterne, 
+                                                  Ticket ticket, Optional<NotificationTemplate> templateOpt) {
+        
+        String email = utilisateur != null ? utilisateur.getEmail() : 
+                      (utilisateurInterne != null ? utilisateurInterne.getEmail() : null);
+        String telephone = utilisateur != null ? utilisateur.getTelephone() : 
+                          (utilisateurInterne != null ? utilisateurInterne.getTelephone() : null);
+        String nom = utilisateur != null ? utilisateur.getNom() : 
+                    (utilisateurInterne != null ? utilisateurInterne.getNom() : "Utilisateur");
+        
+        if (email != null) {
             if (templateOpt.isPresent()) {
                 NotificationTemplate template = templateOpt.get();
                 emailService.envoyerEmailAvecTemplate(
-                    utilisateur.getEmail(),
+                    email,
                     template.getSujet().replace("{reference}", ticket.getReference()),
                     template.getContenuHtml()
                         .replace("{reference}", ticket.getReference())
                         .replace("{titre}", ticket.getTitre())
-                        .replace("{utilisateur}", utilisateur.getNom())
+                        .replace("{utilisateur}", nom)
                 );
             } else {
                 emailService.envoyerNotificationTicketCree(
-                    utilisateur.getEmail(),
+                    email,
                     ticket.getReference(),
                     ticket.getTitre()
                 );
             }
         }
         
-        if (utilisateur.getTelephone() != null) {
+        if (telephone != null) {
             whatsAppService.envoyerNotificationTicketCree(
-                utilisateur.getTelephone(),
+                telephone,
                 ticket.getReference(),
                 ticket.getTitre()
             );
@@ -184,29 +209,37 @@ public class NotificationWorkflowService {
     }
     
     /**
-     * Envoi notification changement de statut
+     * Envoi notification changement de statut (version avec les deux types d'utilisateurs)
      */
-    private void envoyerNotificationChangementStatut(Utilisateur utilisateur, Ticket ticket, 
-                                                    Integer ancienStatutId, Integer nouveauStatutId,
+    private void envoyerNotificationChangementStatut(Utilisateur utilisateur, UtilisateurInterne utilisateurInterne, 
+                                                    Ticket ticket, Integer ancienStatutId, Integer nouveauStatutId,
                                                     Optional<NotificationTemplate> templateOpt) {
+        
         String ancienStatut = mapStatutIdToString(ancienStatutId);
         String nouveauStatut = mapStatutIdToString(nouveauStatutId);
         
-        if (utilisateur.getEmail() != null) {
+        String email = utilisateur != null ? utilisateur.getEmail() : 
+                      (utilisateurInterne != null ? utilisateurInterne.getEmail() : null);
+        String telephone = utilisateur != null ? utilisateur.getTelephone() : 
+                          (utilisateurInterne != null ? utilisateurInterne.getTelephone() : null);
+        String nom = utilisateur != null ? utilisateur.getNom() : 
+                    (utilisateurInterne != null ? utilisateurInterne.getNom() : "Utilisateur");
+        
+        if (email != null) {
             if (templateOpt.isPresent()) {
                 NotificationTemplate template = templateOpt.get();
                 emailService.envoyerEmailAvecTemplate(
-                    utilisateur.getEmail(),
+                    email,
                     template.getSujet().replace("{reference}", ticket.getReference()),
                     template.getContenuHtml()
                         .replace("{reference}", ticket.getReference())
                         .replace("{ancienStatut}", ancienStatut)
                         .replace("{nouveauStatut}", nouveauStatut)
-                        .replace("{utilisateur}", utilisateur.getNom())
+                        .replace("{utilisateur}", nom)
                 );
             } else {
                 emailService.envoyerNotificationChangementStatut(
-                    utilisateur.getEmail(),
+                    email,
                     ticket.getReference(),
                     ancienStatut,
                     nouveauStatut
@@ -214,9 +247,9 @@ public class NotificationWorkflowService {
             }
         }
         
-        if (utilisateur.getTelephone() != null) {
+        if (telephone != null) {
             whatsAppService.envoyerNotificationChangementStatut(
-                utilisateur.getTelephone(),
+                telephone,
                 ticket.getReference(),
                 nouveauStatut
             );
@@ -224,18 +257,27 @@ public class NotificationWorkflowService {
     }
     
     /**
-     * Envoi notification ajout de solution
+     * Envoi notification ajout de solution (version avec les deux types d'utilisateurs)
      */
-    private void envoyerNotificationAjoutSolution(Utilisateur utilisateur, Ticket ticket, Optional<NotificationTemplate> templateOpt) {
-        if (utilisateur.getEmail() != null) {
+    private void envoyerNotificationAjoutSolution(Utilisateur utilisateur, UtilisateurInterne utilisateurInterne, 
+                                                 Ticket ticket, Optional<NotificationTemplate> templateOpt) {
+        
+        String email = utilisateur != null ? utilisateur.getEmail() : 
+                      (utilisateurInterne != null ? utilisateurInterne.getEmail() : null);
+        String telephone = utilisateur != null ? utilisateur.getTelephone() : 
+                          (utilisateurInterne != null ? utilisateurInterne.getTelephone() : null);
+        String nom = utilisateur != null ? utilisateur.getNom() : 
+                    (utilisateurInterne != null ? utilisateurInterne.getNom() : "Utilisateur");
+        
+        if (email != null) {
             if (templateOpt.isPresent()) {
                 NotificationTemplate template = templateOpt.get();
                 emailService.envoyerEmailAvecTemplate(
-                    utilisateur.getEmail(),
+                    email,
                     template.getSujet().replace("{reference}", ticket.getReference()),
                     template.getContenuHtml()
                         .replace("{reference}", ticket.getReference())
-                        .replace("{utilisateur}", utilisateur.getNom())
+                        .replace("{utilisateur}", nom)
                 );
             } else {
                 // Template par défaut pour ajout de solution
@@ -246,31 +288,33 @@ public class NotificationWorkflowService {
                                "<a href=\"#\" class=\"action-button\">📖 Voir la Solution</a>" +
                                "</div>";
                 
-                emailService.envoyerEmailAvecTemplate(utilisateur.getEmail(), sujet, contenu);
+                emailService.envoyerEmailAvecTemplate(email, sujet, contenu);
             }
         }
-        
-        // if (utilisateur.getTelephone() != null) {
-        //     whatsAppService.envoyerNotificationAjoutSolution(
-        //         utilisateur.getTelephone(),
-        //         ticket.getReference()
-        //     );
-        // }
     }
     
     /**
-     * Envoi notification clôture de ticket
+     * Envoi notification clôture de ticket (version avec les deux types d'utilisateurs)
      */
-    private void envoyerNotificationClotureTicket(Utilisateur utilisateur, Ticket ticket, Optional<NotificationTemplate> templateOpt) {
-        if (utilisateur.getEmail() != null) {
+    private void envoyerNotificationClotureTicket(Utilisateur utilisateur, UtilisateurInterne utilisateurInterne, 
+                                                 Ticket ticket, Optional<NotificationTemplate> templateOpt) {
+        
+        String email = utilisateur != null ? utilisateur.getEmail() : 
+                      (utilisateurInterne != null ? utilisateurInterne.getEmail() : null);
+        String telephone = utilisateur != null ? utilisateur.getTelephone() : 
+                          (utilisateurInterne != null ? utilisateurInterne.getTelephone() : null);
+        String nom = utilisateur != null ? utilisateur.getNom() : 
+                    (utilisateurInterne != null ? utilisateurInterne.getNom() : "Utilisateur");
+        
+        if (email != null) {
             if (templateOpt.isPresent()) {
                 NotificationTemplate template = templateOpt.get();
                 emailService.envoyerEmailAvecTemplate(
-                    utilisateur.getEmail(),
+                    email,
                     template.getSujet().replace("{reference}", ticket.getReference()),
                     template.getContenuHtml()
                         .replace("{reference}", ticket.getReference())
-                        .replace("{utilisateur}", utilisateur.getNom())
+                        .replace("{utilisateur}", nom)
                 );
             } else {
                 // Template par défaut pour clôture
@@ -282,9 +326,11 @@ public class NotificationWorkflowService {
                                "<p style=\"margin: 0; opacity: 0.9;\">Votre demande a été traitée avec succès</p>" +
                                "</div>";
                 
-                emailService.envoyerEmailAvecTemplate(utilisateur.getEmail(), sujet, contenu);
+                emailService.envoyerEmailAvecTemplate(email, sujet, contenu);
             }
         }
+    }
+
         
         // if (utilisateur.getTelephone() != null) {
         //     whatsAppService.envoyerNotificationClotureTicket(
@@ -292,7 +338,7 @@ public class NotificationWorkflowService {
         //         ticket.getReference()
         //     );
         // }
-    }
+    
     
     /**
      * Conversion ID statut → libellé
@@ -319,5 +365,16 @@ public class NotificationWorkflowService {
      */
     public List<WorkflowNotificationMail> getWorkflowsParType(String typeNotificationCode) {
         return workflowRepository.findByTypeNotificationCodeActif(typeNotificationCode);
+    }
+
+        /**
+     * Récupère le template associé à un type de notification
+     */
+    private Optional<NotificationTemplate> getTemplateForNotification(String typeNotificationCode) {
+        Optional<TypeNotification> typeOpt = typeNotificationRepository.findByCode(typeNotificationCode);
+        if (typeOpt.isPresent() && typeOpt.get().getTemplateId() != null) {
+            return templateRepository.findById(typeOpt.get().getTemplateId());
+        }
+        return Optional.empty();
     }
 }

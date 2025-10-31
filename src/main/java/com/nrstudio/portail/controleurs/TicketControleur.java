@@ -52,12 +52,7 @@ public TicketAvecProduitPageReponse listerTicketsAdmin(
     @RequestParam(value = "priorite", required = false) String priorite) {
 
     System.out.println("Récupération des tickets admin avec filtres:");
-    System.out.println("Page: " + page + ", Size: " + size);
-    System.out.println("État: " + etat + ", Référence: " + reference);
-    System.out.println("Produit: " + produit + ", Société: " + societe);
-    System.out.println("Priorité: " + priorite);
-    System.out.println("Date début: " + dateDebut + ", Date fin: " + dateFin);
-
+    
     TicketAvecProduitPageReponse response = service.listerTicketsAdminAvecPaginationEtFiltres(
         page, size, etat, reference, produit, dateDebut, dateFin, societe, priorite);
 

@@ -387,12 +387,12 @@ public class EmailNotificationService {
     }
 
     public void envoyerNotificationChangementStatut(String destinataire, String reference, String ancienStatut, String nouveauStatut) {
-        String sujet = "🔄 Statut Modifie - " + reference;
+        String sujet = "Statut Modifie - " + reference;
         String texteHtml = 
             "<p style=\"font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;\">Bonjour,</p>\n" +
             "<p style=\"margin-bottom: 20px; color: #4A5568;\">Le statut de votre ticket a ete mis a jour.</p>\n" +
             "<div class='info-card'>\n" +
-            "    <h3>🔄 Evolution du Statut</h3>\n" +
+            "    <h3>Evolution du Statut</h3>\n" +
             "    <div class='info-grid'>\n" +
             "        <div class='info-row'>\n" +
             "            <div class='info-label'>Ticket</div>\n" +
@@ -404,12 +404,12 @@ public class EmailNotificationService {
             "        </div>\n" +
             "        <div class='info-row'>\n" +
             "            <div class='info-label'>Nouveau Statut</div>\n" +
-            "            <div class='info-value' style=\"color: #10B981;\">🚀 " + nouveauStatut + "</div>\n" +
+            "            <div class='info-value' style=\"color: #10B981;\">" + nouveauStatut + "</div>\n" +
             "        </div>\n" +
             "    </div>\n" +
             "</div>\n" +
             "<div style=\"text-align: center; margin: 25px 0;\">\n" +
-            "    <a href=\"#\" class=\"action-button\">📖 Voir les Details</a>\n" +
+            "    <a href=\"#\" class=\"action-button\">Voir les Details</a>\n" +
             "</div>";
         
         sendEmail(destinataire, sujet, createEmailTemplate(texteHtml, "statut"));

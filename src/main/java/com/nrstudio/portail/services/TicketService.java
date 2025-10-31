@@ -285,10 +285,18 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
     dto.setReference(ticket.getReference());
     dto.setProduitId(ticket.getProduitId());
     dto.setDescription(ticket.getDescription());
+    dto.setTitre(ticket.getTitre());
     dto.setPrioriteTicketId(ticket.getPrioriteTicketId().toString());
     dto.setDateCreation(ticket.getDateCreation());
     dto.setDateCloture(ticket.getDateCloture());
     dto.setEtat(ticket.getStatutTicketId().toString()); // Adaptez selon votre logique d'état
+    dto.setCompanyName(ticket.getCompanyId() != null ? 
+        companies.findById(ticket.getCompanyId())
+                 .map(Company::getNom)
+                 .orElse("Entreprise inconnue") 
+        : "Entreprise inconnue");
+
+    
     
     // Récupérer le nom du produit
     String produitNom = "Produit inconnu";
@@ -413,7 +421,7 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
       }
   }
 
-  private void envoyerNotificationsChangementStatut(Ticket t, Integer ancienStatutId, Integer nouveauStatutId) {
+  public void envoyerNotificationsChangementStatut(Ticket t, Integer ancienStatutId, Integer nouveauStatutId) {
     try {
         notificationWorkflowService.executerWorkflowNotification("MODIFICATION_STATUT_TICKET", t, ancienStatutId, nouveauStatutId);
     } catch (Exception e) {
@@ -475,6 +483,7 @@ public TicketAvecProduitPageReponse listerTicketsAdminAvecPaginationEtFiltres(
 
     Stream<Ticket> ticketStream = tickets.findAll().stream();
 
+    System.out.println("Etat: " + etat);
     // Filtre par statut
     if (etat != null && !etat.isEmpty()) {
         try {

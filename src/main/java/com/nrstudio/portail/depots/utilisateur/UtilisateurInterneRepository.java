@@ -1,4 +1,4 @@
-package com.nrstudio.portail.depots.utiisateur;
+package com.nrstudio.portail.depots.utilisateur;
 
 import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;
 import com.nrstudio.portail.dto.utilisateur.UtilisateurInterneDto;

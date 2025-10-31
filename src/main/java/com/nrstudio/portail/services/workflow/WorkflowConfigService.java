@@ -1,7 +1,7 @@
 package com.nrstudio.portail.services.workflow;
 
 import com.nrstudio.portail.depots.*;
-import com.nrstudio.portail.depots.utiisateur.UtilisateurInterneRepository;
+import com.nrstudio.portail.depots.utilisateur.UtilisateurInterneRepository;
 import com.nrstudio.portail.depots.workflow.WorkflowNotificationViewRepository;
 import com.nrstudio.portail.domaine.*;
 import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;
