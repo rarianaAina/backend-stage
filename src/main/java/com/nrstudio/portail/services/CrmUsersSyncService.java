@@ -1,7 +1,7 @@
 // package com.nrstudio.portail.services;
 
 // import com.nrstudio.portail.depots.UtilisateurRepository;
-// import com.nrstudio.portail.depots.utiisateur.UtilisateurInterneRepository;
+// import com.nrstudio.portail.depots.utilisateur.UtilisateurInterneRepository;
 // import com.nrstudio.portail.domaine.Utilisateur;
 // import com.nrstudio.portail.domaine.UtilisateurRole;
 // import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;

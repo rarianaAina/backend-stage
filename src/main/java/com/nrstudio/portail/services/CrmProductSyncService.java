@@ -17,6 +17,8 @@
 // import java.util.List;
 // import java.util.Map;
 // import java.util.Objects;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
 
 // @Service
 // public class CrmProductSyncService {
@@ -24,6 +26,8 @@
 //   private final JdbcTemplate crmJdbc;
 //   private final ProduitRepository produits;
 //   private final CompanyPARCRepository companyPARCRepository;
+    
+// private static final Logger log = LoggerFactory.getLogger(CrmProductSyncService.class);
 
 //     public CrmProductSyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
 //                                ProduitRepository produits,
@@ -41,13 +45,19 @@
 //   }
 
 //   public void synchroniserProduitsParc() {
-//     final String sql = 
-//       "SELECT parc_PARCid, parc_name, parc_detail, parc_Produit, parc_CreatedDate, " +
-//       "       ISNULL(parc_Deleted, 0) AS parc_Deleted, parc_dateMaj " +
-//       "FROM dbo.PARC WHERE ISNULL(parc_Deleted, 0) = 0";
+
+//     log.info("Début de l'import CRM...");
+
+//     final String sql =
+//     "SELECT parc_PARCid, parc_name, parc_detail, parc_Produit, parc_CreatedDate, " +
+//     "       ISNULL(parc_Deleted, 0) AS parc_Deleted, parc_dateMaj " +
+//     "FROM dbo.PARC " +
+//     "WHERE ISNULL(parc_Deleted, 0) = 0 " +
+//     "  AND parc_actif = 'Y'";
+
 
 //     List<Map<String, Object>> rows = crmJdbc.queryForList(sql);
-
+//     log.info("{} enregistrements récupérés depuis le CRM", rows.size());
 //     for (Map<String, Object> r : rows) {
 //       Integer parcId = toInt(r.get("parc_PARCid"));
 //       if (parcId == null) continue;
@@ -84,6 +94,7 @@
 //         produits.save(nouveauProduit);
 //       }
 //     }
+//     log.info("Fin de l'import CRM.");
 //   }
 
 //   private void synchroniserCompanyPARC() {

@@ -101,32 +101,34 @@ public Ticket creerEtSynchroniser(TicketCreationRequete r) {
     t.setReference("TCK-" + System.currentTimeMillis());
     t = tickets.save(t);
 
-    // // 2) Créer le Case dans le CRM (dbo.Cases)
-    // String caseDescription = truncate(t.getTitre(), 40);
-    // String caseProblemNote = t.getDescription() != null ? t.getDescription() : "";
-    // String casePriority = mapPrioriteIdToCrmString(t.getPrioriteTicketId()); // TODO: adapter
-    // String caseStatus   = mapStatutIdToCrmString(t.getStatutTicketId());     // TODO: adapter
-    // String caseProduct  = mapProduitIdToCrmString(t.getProduitId());         // TODO: adapter
+    // 2) Créer le Case dans le CRM (dbo.Cases)
+    String caseDescription = truncate(t.getTitre(), 40);
+    String caseProblemNote = t.getDescription() != null ? t.getDescription() : "";
+    String casePriority = mapPrioriteIdToCrmString(t.getPrioriteTicketId()); 
+    String caseStatus   = mapStatutIdToCrmString(t.getStatutTicketId());     
+    String caseProduct  = mapProduitIdToCrmString(t.getProduitId());         
+    String caseStage = "Logged";
+    String caseSource = "Portail";
 
-    // // Company côté CRM
-    // Integer crmCompanyId = mapCompanyIdToCrmCompanyId(t.getCompanyId());
+    // Company côté CRM
+    Integer crmCompanyId = mapCompanyIdToCrmCompanyId(t.getCompanyId());
 
-    // Integer caseId = crmJdbc.queryForObject(
-    //   "INSERT INTO dbo.Cases " +
-    //   " (Case_PrimaryCompanyId, Case_Description, Case_ProblemNote, Case_Priority, Case_Status, " +
-    //   "  Case_Product, Case_Opened, Case_Deleted, Case_Source, Case_CustomerRef) " +
-    //   " VALUES (?,?,?,?,?,?, GETDATE(), 0, 'Portail', ?) ; " +
-    //   " SELECT CAST(SCOPE_IDENTITY() AS INT);",
-    //   Integer.class,
-    //   crmCompanyId, caseDescription, caseProblemNote, casePriority, caseStatus,
-    //   caseProduct, t.getReference()
-    // );
+    Integer caseId = crmJdbc.queryForObject(
+      "INSERT INTO dbo.Cases " +
+      " (Case_PrimaryCompanyId, Case_PrimaryPersonId, Case_Description, Case_ProblemNote, Case_Priority, Case_CreatedDate, Case_Status, Case_Stage, " +
+      "  Case_Product, Case_Source, Case_CustomerRef) " +
+      " VALUES (?,?,?,?,?,GETDATE(),?,?,?,?,?) ; " +
+      " SELECT CAST(SCOPE_IDENTITY() AS INT);",
+      Integer.class,
+      crmCompanyId, clientIdExterne, caseDescription, caseProblemNote, casePriority, caseStatus, caseStage,
+      caseProduct, caseSource, t.getReference()
+    );
 
-    // if (caseId != null) {
-    //   t.setIdExterneCrm(caseId);
-    //   t.setDateMiseAJour(LocalDateTime.now());
-    //   t = tickets.save(t);
-    // }
+    if (caseId != null) {
+      t.setIdExterneCrm(caseId);
+      t.setDateMiseAJour(LocalDateTime.now());
+      t = tickets.save(t);
+    }
 
     envoyerNotificationsCreation(t);
 
@@ -585,9 +587,9 @@ public TicketAvecProduitPageReponse listerTicketsAdminAvecPaginationEtFiltres(
     if (prioriteId == null) return null;
     // exemple : 1=Low, 2=Normal, 3=High, 4=Urgent
     switch (prioriteId) {
-      case 4: return "Urgent";
-      case 3: return "High";
-      case 2: return "Normal";
+      case 1: return "Urgent";
+      case 2: return "High";
+      case 3: return "Normal";
       default: return "Low";
     }
   }
