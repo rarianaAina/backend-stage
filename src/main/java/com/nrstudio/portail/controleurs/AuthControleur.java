@@ -68,11 +68,10 @@ public class AuthControleur {
         System.out.println("Company Name: " + companyName);
         
         if (stocke != null && BCrypt.checkpw(req.getMotDePasse(), stocke)) {
-            
-            // ✅ GÉNÉRATION DU CODE DE VALIDATION
+            System.out.println("=== GÉNÉRATION DU CODE ===");
             ValidationCode codeGenere = validationCodeService.generateCode(u.getId().toString(), u.getEmail());
-            emailNotificationService.envoyerNotificationCodeValidation(u.getEmail(), codeGenere.getCode());
-            // TODO: Envoyer le code par email/SMS ici
+            System.out.println("=== ENVOI EMAIL ===");
+            System.out.println("=== FIN CONNEXION ===");
             System.out.println("Code de validation généré pour " + u.getEmail() + ": " + codeGenere.getCode());
             
             // Pour l'instant, on retourne le code dans la réponse (à supprimer en production)
