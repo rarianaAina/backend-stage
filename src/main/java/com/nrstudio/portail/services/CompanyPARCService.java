@@ -29,6 +29,7 @@ public class CompanyPARCService {
         if (company.isPresent()) {
             String idExterneCrm = company.get().getIdExterneCrm();
             int idExterneCrmInt = Integer.parseInt(idExterneCrm);
+            System.out.println("Recherche des PARCs pour la company avec idExterneCrm: " + idExterneCrmInt);
             // Utiliser l'idExterneCrm pour rechercher les PARCs
             return companyPARCRepository.findByParcCompanyId(idExterneCrmInt);
         } else {

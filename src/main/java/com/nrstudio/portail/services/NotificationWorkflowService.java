@@ -367,13 +367,13 @@ public class NotificationWorkflowService {
         return workflowRepository.findByTypeNotificationCodeActif(typeNotificationCode);
     }
 
-        /**
+    /**
      * Récupère le template associé à un type de notification
      */
     private Optional<NotificationTemplate> getTemplateForNotification(String typeNotificationCode) {
         Optional<TypeNotification> typeOpt = typeNotificationRepository.findByCode(typeNotificationCode);
-        if (typeOpt.isPresent() && typeOpt.get().getTemplateId() != null) {
-            return templateRepository.findById(typeOpt.get().getTemplateId());
+        if (typeOpt.isPresent() && typeOpt.get().getTemplate() != null) {
+            return Optional.of(typeOpt.get().getTemplate());
         }
         return Optional.empty();
     }

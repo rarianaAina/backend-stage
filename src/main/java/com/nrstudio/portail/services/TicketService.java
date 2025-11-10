@@ -55,6 +55,88 @@ public class TicketService {
     this.notificationWorkflowService = notificationWorkflowService;
   }
 
+// @Transactional
+// public Ticket creerEtSynchroniser(TicketCreationRequete r) {
+
+//     // Pour le produit
+//     String produitIdExterneCrm = String.valueOf(r.getProduitId());
+//     Optional<Produit> produitOpt = produitRepository.findByIdExterneCrm(produitIdExterneCrm);
+    
+//     Integer produitIdLocal;
+//     if (produitOpt.isPresent()) {
+//         produitIdLocal = produitOpt.get().getId();
+//     } else {
+//         throw new IllegalArgumentException("Produit introuvable pour idExterneCrm: " + produitIdExterneCrm);
+//     }
+
+//     // Pour le client - récupérer l'idExterneCrm à partir de l'ID local
+//     Integer clientIdLocal = r.getClientId();
+//     Optional<Utilisateur> utilisateurOpt = utilisateurs.findById(clientIdLocal); // Chercher par ID local
+    
+//     String clientIdExterne;
+//     if (utilisateurOpt.isPresent()) {
+//         clientIdExterne = utilisateurOpt.get().getIdExterneCrm();
+//         // Si vous voulez un Integer, convertissez-le
+//         // clientIdExterne = Integer.valueOf(utilisateurOpt.get().getIdExterneCrm());
+//     } else {
+//         throw new IllegalArgumentException("Utilisateur introuvable pour id: " + clientIdLocal);
+//     }
+
+//     Ticket t = new Ticket();
+//     t.setCompanyId(r.getCompanyId());
+//     t.setClientId(Integer.valueOf(clientIdExterne)); // ou Integer.valueOf(clientIdExterne) si besoin
+//     t.setProduitId(produitIdLocal);
+//     t.setTypeTicketId(r.getTypeTicketId());
+//     t.setPrioriteTicketId(r.getPrioriteTicketId());
+//     t.setStatutTicketId(1);
+//     t.setTitre(r.getRaison());
+//     t.setDescription(r.getDescription());
+//     t.setRaison(r.getRaison());
+//     t.setPolitiqueAcceptee(true);
+//     t.setCreeParUtilisateurId(r.getCreeParUtilisateurId());
+//     t.setAffecteAUtilisateurId(r.getAffecteAUtilisateurId());
+//     t.setDateCreation(LocalDateTime.now());
+//     t.setDateMiseAJour(LocalDateTime.now());
+
+//     t.setReference("TCK-" + System.currentTimeMillis());
+//     t = tickets.save(t);
+
+//     // 2) Créer le Case dans le CRM (dbo.Cases)
+//     String caseDescription = truncate(t.getTitre(), 40);
+//     String caseProblemNote = t.getDescription() != null ? t.getDescription() : "";
+//     String casePriority = mapPrioriteIdToCrmString(t.getPrioriteTicketId()); 
+//     String caseStatus   = mapStatutIdToCrmString(t.getStatutTicketId());     
+//     String caseProduct  = mapProduitIdToCrmString(t.getProduitId());
+//     System.out.println("Mapping produitId " + t.getProduitId() + " to CRM product: " + caseProduct); 
+//     String caseStage = "Logged";
+//     String caseSource = "Portail";
+//     Integer caseCreatedBy = 2074;
+//     String caseReferenceId = 
+//     // Company côté CRM
+//     Integer crmCompanyId = mapCompanyIdToCrmCompanyId(t.getCompanyId());
+
+//     Integer caseId = crmJdbc.queryForObject(
+//       "INSERT INTO dbo.Cases " +
+//       " (Case_PrimaryCompanyId, Case_PrimaryPersonId, Case_Description, Case_ProblemNote, Case_Priority, Case_CreatedDate, Case_Status, Case_Stage, " +
+//       "  Case_PARCId, Case_CreatedBy, Case_Source, Case_CustomerRef, Case_ReferenceId) " +
+//       " VALUES (?,?,?,?,?,GETDATE(),?,?,?,?,?,?,?) ; " +
+//       " SELECT CAST(SCOPE_IDENTITY() AS INT);",
+//       Integer.class,
+//       crmCompanyId, clientIdExterne, caseDescription, caseProblemNote, casePriority, caseStatus, caseStage,
+//       caseProduct, caseCreatedBy, caseSource, t.getReference()
+//     );
+
+//     if (caseId != null) {
+//       t.setIdExterneCrm(caseId);
+//       t.setDateMiseAJour(LocalDateTime.now());
+//       t = tickets.save(t);
+//     }
+
+//     envoyerNotificationsCreation(t);
+
+//     return t;
+// }
+
 @Transactional
 public Ticket creerEtSynchroniser(TicketCreationRequete r) {
 
@@ -76,15 +158,14 @@ public Ticket creerEtSynchroniser(TicketCreationRequete r) {
     String clientIdExterne;
     if (utilisateurOpt.isPresent()) {
         clientIdExterne = utilisateurOpt.get().getIdExterneCrm();
-        // Si vous voulez un Integer, convertissez-le
-        // clientIdExterne = Integer.valueOf(utilisateurOpt.get().getIdExterneCrm());
     } else {
         throw new IllegalArgumentException("Utilisateur introuvable pour id: " + clientIdLocal);
     }
+    String caseReferenceId = genererNouveauCaseReferenceId();
 
     Ticket t = new Ticket();
     t.setCompanyId(r.getCompanyId());
-    t.setClientId(Integer.valueOf(clientIdExterne)); // ou Integer.valueOf(clientIdExterne) si besoin
+    t.setClientId(Integer.valueOf(clientIdExterne));
     t.setProduitId(produitIdLocal);
     t.setTypeTicketId(r.getTypeTicketId());
     t.setPrioriteTicketId(r.getPrioriteTicketId());
@@ -99,6 +180,7 @@ public Ticket creerEtSynchroniser(TicketCreationRequete r) {
     t.setDateMiseAJour(LocalDateTime.now());
 
     t.setReference("TCK-" + System.currentTimeMillis());
+    t.setReferenceId(caseReferenceId);
     t = tickets.save(t);
 
     // 2) Créer le Case dans le CRM (dbo.Cases)
@@ -106,22 +188,27 @@ public Ticket creerEtSynchroniser(TicketCreationRequete r) {
     String caseProblemNote = t.getDescription() != null ? t.getDescription() : "";
     String casePriority = mapPrioriteIdToCrmString(t.getPrioriteTicketId()); 
     String caseStatus   = mapStatutIdToCrmString(t.getStatutTicketId());     
-    String caseProduct  = mapProduitIdToCrmString(t.getProduitId());         
+    String caseProduct  = mapProduitIdToCrmString(t.getProduitId());
+    System.out.println("Mapping produitId " + t.getProduitId() + " to CRM product: " + caseProduct); 
     String caseStage = "Logged";
     String caseSource = "Portail";
+    Integer caseCreatedBy = 2074;
+    String caseTargetVer = "CaseTargetVer2";
+    String caseFoundVer = "CaseFoundVer1";
+    Integer caseSecTerr = -2147483640;
+    String caseObject = caseProblemNote;
+    // Générer le Case_ReferenceId automatiquement
 
-    // Company côté CRM
     Integer crmCompanyId = mapCompanyIdToCrmCompanyId(t.getCompanyId());
-
     Integer caseId = crmJdbc.queryForObject(
       "INSERT INTO dbo.Cases " +
       " (Case_PrimaryCompanyId, Case_PrimaryPersonId, Case_Description, Case_ProblemNote, Case_Priority, Case_CreatedDate, Case_Status, Case_Stage, " +
-      "  Case_Product, Case_Source, Case_CustomerRef) " +
-      " VALUES (?,?,?,?,?,GETDATE(),?,?,?,?,?) ; " +
+      "  Case_PARCId, Case_CreatedBy, Case_Source, Case_Object, Case_TargetVer, Case_FoundVer, Case_SecTerr, Case_CustomerRef, Case_ReferenceId) " +
+      " VALUES (?,?,?,?,?,GETDATE(),?,?,?,?,?,?,?,?,?,?,?) ; " +
       " SELECT CAST(SCOPE_IDENTITY() AS INT);",
       Integer.class,
       crmCompanyId, clientIdExterne, caseDescription, caseProblemNote, casePriority, caseStatus, caseStage,
-      caseProduct, caseSource, t.getReference()
+      caseProduct, caseCreatedBy, caseSource, caseObject, caseTargetVer, caseFoundVer, caseSecTerr, t.getReference(), caseReferenceId
     );
 
     if (caseId != null) {
@@ -133,6 +220,44 @@ public Ticket creerEtSynchroniser(TicketCreationRequete r) {
     envoyerNotificationsCreation(t);
 
     return t;
+}
+
+// Méthode pour générer le nouveau Case_ReferenceId
+private String genererNouveauCaseReferenceId() {
+    try {
+        // Récupérer le dernier Case_ReferenceId de la table dbo.Cases
+        String dernierReferenceId = crmJdbc.queryForObject(
+            "SELECT TOP 1 Case_ReferenceId FROM dbo.Cases WHERE Case_ReferenceId LIKE '2074-%' ORDER BY Case_CaseId DESC",
+            String.class
+        );
+        
+        if (dernierReferenceId == null) {
+            // Si aucun enregistrement n'existe, commencer à 2074-11300
+            return "2074-11300";
+        }
+        
+        // Extraire la partie numérique après le "2074-"
+        String[] parties = dernierReferenceId.split("-");
+        if (parties.length == 2) {
+            try {
+                int dernierNumero = Integer.parseInt(parties[1]);
+                int nouveauNumero = dernierNumero + 1;
+                return "2074-" + nouveauNumero;
+            } catch (NumberFormatException e) {
+                // En cas d'erreur de format, retourner une valeur par défaut
+                System.err.println("Erreur de format du Case_ReferenceId: " + dernierReferenceId);
+                return "2074-11300";
+            }
+        } else {
+            // Format inattendu, retourner une valeur par défaut
+            System.err.println("Format inattendu du Case_ReferenceId: " + dernierReferenceId);
+            return "2074-11300";
+        }
+    } catch (Exception e) {
+        System.err.println("Erreur lors de la génération du Case_ReferenceId: " + e.getMessage());
+        // En cas d'erreur, retourner une valeur basée sur le timestamp
+        return "2074-" + (11300 + (System.currentTimeMillis() % 1000));
+    }
 }
   @Transactional
   public Ticket changerStatut(Integer ticketId, Integer nouveauStatutId, Integer utilisateurId) {
@@ -430,7 +555,16 @@ private TicketAvecProduitDto convertirEnAvecProduitDto(Ticket ticket) {
         System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
         e.printStackTrace();
     }
-}
+  }
+
+    public void envoyerNotificationsAjoutSolution(Ticket t) {
+      try {
+          notificationWorkflowService.executerWorkflowNotification("AJOUT_SOLUTION", t);
+      } catch (Exception e) {
+          System.err.println("Erreur lors de l'envoi des notifications : " + e.getMessage());
+          e.printStackTrace();
+      }
+    }
   // private void envoyerNotificationsChangementStatut(Ticket t, Integer ancienStatutId, Integer nouveauStatutId) {
   //   try {
   //     String ancienStatut = mapStatutIdToCrmString(ancienStatutId);
@@ -587,10 +721,10 @@ public TicketAvecProduitPageReponse listerTicketsAdminAvecPaginationEtFiltres(
     if (prioriteId == null) return null;
     // exemple : 1=Low, 2=Normal, 3=High, 4=Urgent
     switch (prioriteId) {
-      case 1: return "Urgent";
-      case 2: return "High";
-      case 3: return "Normal";
-      default: return "Low";
+      case 1: return "High";
+      case 2: return "Normal";
+      case 3: return "Low";
+      default: return "Normal";
     }
   }
 
@@ -605,9 +739,19 @@ public TicketAvecProduitPageReponse listerTicketsAdminAvecPaginationEtFiltres(
     }
   }
 
+  //Retourner l'idexternecrm du produit
   private String mapProduitIdToCrmString(Integer produitId) {
-    // si tu as un catalogue CRM en texte, retourne le libellé attendu
-    return null; // facultatif
+    if (produitId == null) return null;
+    try {
+      Produit produit = produitRepository.findById(produitId).orElse(null);
+      if (produit != null) {
+        return produit.getIdExterneCrm(); 
+      } else {
+        return null;
+      }
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   private Integer mapCompanyIdToCrmCompanyId(Integer companyId) {
