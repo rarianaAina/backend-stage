@@ -8,9 +8,11 @@ import com.nrstudio.portail.domaine.Ticket;
 import com.nrstudio.portail.dto.TicketAvecProduitPageReponse;
 import com.nrstudio.portail.dto.TicketCreationRequete;
 import com.nrstudio.portail.dto.TicketPageReponse;
+import com.nrstudio.portail.dto.solution.SolutionDTO;
 import com.nrstudio.portail.services.TicketService;
-
+import com.nrstudio.portail.services.solution.SolutionService;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -23,6 +25,9 @@ public class TicketControleur {
 
   private final TicketRepository repo;
   private final TicketService service;
+
+  @Autowired
+  private SolutionService solutionService;
 
   @Autowired
   private ProduitRepository produitRepository;
@@ -166,5 +171,17 @@ public TicketAvecProduitPageReponse listerTicketsAdmin(
   @GetMapping("/consultant/{consultantId}")
   public List<Ticket> listerParConsultant(@PathVariable("consultantId") Integer consultantId) {
     return service.listerTicketsConsultant(consultantId);
+  }
+
+  @GetMapping("/{ticketId}/solutions")
+  public ResponseEntity<List<SolutionDTO>> getSolutionsDuTicket(@PathVariable Integer ticketId) {
+      try {
+          List<SolutionDTO> solutions = solutionService.getSolutionsByTicketId(ticketId);
+          return ResponseEntity.ok(solutions);
+      } catch (RuntimeException e) {
+          return ResponseEntity.notFound().build();
+      } catch (Exception e) {
+          return ResponseEntity.internalServerError().build();
+      }
   }
 }

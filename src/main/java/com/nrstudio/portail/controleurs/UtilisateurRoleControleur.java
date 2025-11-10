@@ -18,15 +18,20 @@ public class UtilisateurRoleControleur {
         this.utilisateurRoleRepository = utilisateurRoleRepository;
     }
 
+    // @GetMapping("/roles/{utilisateurId}")
+    // public List<String> getRolesByUtilisateur(@PathVariable("utilisateurId") Integer utilisateurId) {
+    //     System.out.println(utilisateurId);
+    //     List<UtilisateurRole> roles = utilisateurRoleRepository.findAll()
+    //         .stream()
+    //         .filter(ur -> ur.getUtilisateur().getId().equals(utilisateurId))
+    //         .collect(Collectors.toList());
+    //     return roles.stream()
+    //         .map(ur -> ur.getRole().getCode())
+    //         .collect(Collectors.toList());
+    // }
+
     @GetMapping("/roles/{utilisateurId}")
     public List<String> getRolesByUtilisateur(@PathVariable("utilisateurId") Integer utilisateurId) {
-        System.out.println(utilisateurId);
-        List<UtilisateurRole> roles = utilisateurRoleRepository.findAll()
-            .stream()
-            .filter(ur -> ur.getUtilisateur().getId().equals(utilisateurId))
-            .collect(Collectors.toList());
-        return roles.stream()
-            .map(ur -> ur.getRole().getCode())
-            .collect(Collectors.toList());
+        return utilisateurRoleRepository.findRoleCodesByUtilisateurId(utilisateurId);
     }
 }
