@@ -491,6 +491,37 @@ CREATE TABLE type_notification (
     date_modification DATETIME2 NULL
 );
 
+CREATE TABLE solutions (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id_externe_crm NVARCHAR(255) UNIQUE NOT NULL,
+    titre NVARCHAR(500),
+    description NVARCHAR(MAX),
+    zone NVARCHAR(100),
+    statut NVARCHAR(50),
+    etape NVARCHAR(50),
+    reference NVARCHAR(255),
+    secteur NVARCHAR(100),
+    cloture BIT DEFAULT 0,
+    supprime BIT DEFAULT 0,
+    date_creation DATETIME2,
+    date_mise_a_jour DATETIME2,
+    date_externalisation DATETIME2,
+    date_synchronisation DATETIME2,
+    cree_par INT,
+    mis_a_jour_par INT,
+    utilisateur_attribue INT,
+    workflow_id INT,
+    canal_id INT,
+    cle_externe_talend NVARCHAR(255)
+);
+ALTER TABLE solutions ADD COLUMN date_cloture DATETIME;
+-- Création des index
+CREATE INDEX idx_solutions_id_externe_crm ON solutions(id_externe_crm);
+CREATE INDEX idx_solutions_statut ON solutions(statut);
+CREATE INDEX idx_solutions_zone ON solutions(zone);
+CREATE INDEX idx_solutions_cloture ON solutions(cloture);
+CREATE INDEX idx_solutions_date_creation ON solutions(date_creation);
+CREATE INDEX idx_solutions_date_synchronisation ON solutions(date_synchronisation);
 -- Création de la table workflow_notification_mail
 CREATE TABLE workflow_notification_mail (
     id INT IDENTITY(1,1) PRIMARY KEY,
@@ -538,6 +569,21 @@ CREATE TABLE configuration_smtp (
     starttls_enabled BIT DEFAULT 1,
     ssl_trust VARCHAR(255),
     est_actif BIT DEFAULT 1,
+    date_creation DATETIME2 DEFAULT GETDATE(),
+    date_modification DATETIME2
+);
+
+CREATE TABLE configuration_whatsapp (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    api_base_url VARCHAR(255) NOT NULL DEFAULT 'https://waba.360dialog.io/v1/messages', -- URL par défaut de l'API
+    api_key VARCHAR(500) NOT NULL, -- Clé API 360dialog (à chiffrer)
+    phone_number_id VARCHAR(100) NOT NULL, -- ID du numéro WhatsApp configuré
+    business_account_id VARCHAR(100) NULL, -- ID du compte WhatsApp Business (optionnel)
+    webhook_url VARCHAR(255) NULL, -- URL où ton app reçoit les statuts de message
+    webhook_token VARCHAR(255) NULL, -- jeton de vérification du webhook (si utilisé)
+    est_actif BIT DEFAULT 1, -- pour activer/désactiver la config
+    nom_configuration VARCHAR(100) DEFAULT 'Défaut',
+    description NVARCHAR(500) NULL,
     date_creation DATETIME2 DEFAULT GETDATE(),
     date_modification DATETIME2
 );
