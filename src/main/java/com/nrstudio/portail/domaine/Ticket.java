@@ -70,6 +70,8 @@ public class Ticket {
   @Column(name = "id_externe_crm", unique = true)
   private Integer idExterneCrm;
 
+  @Column(name = "reference_id", unique = true)
+  private String referenceId;
   // Getters et Setters
 
   public Integer getClientId() {
@@ -222,6 +224,14 @@ public class Ticket {
 
   public void setIdExterneCrm(Integer idExterneCrm) {
     this.idExterneCrm = idExterneCrm;
+  }
+
+  public String getReferenceId() {
+    return referenceId;
+  }
+
+  public void setReferenceId(String referenceId) {
+    this.referenceId = referenceId;
   }
 
   @Override

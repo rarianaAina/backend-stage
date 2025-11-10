@@ -59,9 +59,4 @@ public class CreditHoraire {
     //     }
     // }
 
-    @PreUpdate
-    protected void onUpdate() {
-        dateMiseAJour = LocalDateTime.now();
-        heuresRestantes = heuresAllouees - heuresConsommees;
-    }
 }
