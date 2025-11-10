@@ -13,6 +13,7 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Intege
   Optional<Utilisateur> findByIdentifiant(String identifiant);
   Optional<Utilisateur> findByIdExterneCrm(String idExterneCrm);
   Optional<Utilisateur> findByEmail(String email);
+  Optional<Utilisateur> findById(Integer id);
 
     
     // Récupérer un utilisateur avec ses rôles
