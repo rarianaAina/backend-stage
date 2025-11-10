@@ -1,0 +1,11 @@
+- Rajout de l'onglet whatsapp dans la configuration admin
+- Pour chaque étape, rajouter aussi un workflow dans la liste des types de notifications
+- Interface pour la configuration des templates des emails
+- Possibilité de suppimer toutes les configurations de workflow et ensuite sauvegarder la configuration
+- Changer la sauvegarde en synchronisation
+- Rajouter plus de types dans les interactions dans les détails d'un ticket pour que le client puisse voir tout
+- interface pour le choix des synchronisations à faire
+- Trouver toutes les API pour insérer dans la base de données
+
+
+896

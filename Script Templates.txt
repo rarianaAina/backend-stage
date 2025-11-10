@@ -1,0 +1,242 @@
+-- Script d'insertion des templates de notification
+-- Suppression des données existantes pour éviter les doublons
+DELETE FROM notification_template WHERE code IN (
+    'CREATION_TICKET',
+    'MODIFICATION_STATUT_TICKET', 
+    'AJOUT_SOLUTION',
+    'CLOTURE_TICKET',
+    'CODE_VALIDATION',
+    'INTERVENTION_PLANIFIEE',
+    'INTERVENTION_CONFIRMEE'
+);
+
+-- Insertion des templates
+INSERT INTO notification_template (code, libelle, canal, sujet, contenu_html, actif, date_creation, date_mise_a_jour) 
+VALUES 
+-- Template pour création de ticket
+(
+    'CREATION_TICKET',
+    'Création de ticket',
+    'EMAIL',
+    'Nouveau Ticket - {reference}',
+    '<p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;">Bonjour {utilisateur},</p>
+    <p style="margin-bottom: 20px; color: #4A5568;">Une nouvelle demande a été enregistrée dans notre système.</p>
+    <div class=''info-card''>
+        <h3>📋 Détails du Ticket</h3>
+        <div class=''info-grid''>
+            <div class=''info-row''>
+                <div class=''info-label''>Référence</div>
+                <div class=''info-value''><span class=''highlight''>{reference}</span></div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Titre</div>
+                <div class=''info-value''>{titre}</div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Statut Actuel</div>
+                <div class=''info-value'' style="color: #F59E0B;">⏳ En Attente</div>
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="#" class="action-button">📖 Voir le Ticket</a>
+    </div>
+    <p style="text-align: center; color: #718096; font-size: 14px;">Suivez l''avancement en temps réel sur votre portail</p>',
+    1,
+    GETDATE(),
+    GETDATE()
+),
+
+-- Template pour modification de statut
+(
+    'MODIFICATION_STATUT_TICKET',
+    'Modification de statut de ticket',
+    'EMAIL', 
+    'Statut Modifié - {reference}',
+    '<p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;">Bonjour {utilisateur},</p>
+    <p style="margin-bottom: 20px; color: #4A5568;">Le statut de votre ticket a été mis à jour.</p>
+    <div class=''info-card''>
+        <h3>🔄 Évolution du Statut</h3>
+        <div class=''info-grid''>
+            <div class=''info-row''>
+                <div class=''info-label''>Ticket</div>
+                <div class=''info-value''><span class=''highlight''>{reference}</span></div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Ancien Statut</div>
+                <div class=''info-value'' style="color: #EF4444;">{ancienStatut}</div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Nouveau Statut</div>
+                <div class=''info-value'' style="color: #10B981;">{nouveauStatut}</div>
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center; margin: 25px 0;">
+        <a href="#" class="action-button">📊 Voir les Détails</a>
+    </div>',
+    1,
+    GETDATE(),
+    GETDATE()
+),
+
+-- Template pour ajout de solution
+(
+    'AJOUT_SOLUTION',
+    'Ajout de solution',
+    'EMAIL',
+    '✅ Solution Ajoutée - {reference}',
+    '<p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;">Bonjour {utilisateur},</p>
+    <p style="margin-bottom: 20px; color: #4A5568;">Une solution a été ajoutée à votre ticket.</p>
+    <div class=''info-card''>
+        <h3>✅ Solution Disponible</h3>
+        <div class=''info-grid''>
+            <div class=''info-row''>
+                <div class=''info-label''>Référence</div>
+                <div class=''info-value''><span class=''highlight''>{reference}</span></div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Titre</div>
+                <div class=''info-value''>{titre}</div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Statut</div>
+                <div class=''info-value'' style="color: #10B981;">✅ Résolu</div>
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="#" class="action-button">📖 Voir la Solution</a>
+    </div>
+    <p style="text-align: center; color: #718096; font-size: 14px;">Consultez la solution proposée pour votre demande</p>',
+    1,
+    GETDATE(),
+    GETDATE()
+),
+
+-- Template pour clôture de ticket
+(
+    'CLOTURE_TICKET',
+    'Clôture de ticket',
+    'EMAIL',
+    '🏁 Ticket Clôturé - {reference}',
+    '<p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;">Bonjour {utilisateur},</p>
+    <p style="margin-bottom: 20px; color: #4A5568;">Votre ticket a été clôturé avec succès.</p>
+    <div class=''info-card''>
+        <h3>🏁 Bilan du Ticket</h3>
+        <div class=''info-grid''>
+            <div class=''info-row''>
+                <div class=''info-label''>Référence</div>
+                <div class=''info-value''><span class=''highlight''>{reference}</span></div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Titre</div>
+                <div class=''info-value''>{titre}</div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Statut Final</div>
+                <div class=''info-value'' style="color: #10B981;">✅ Clôturé</div>
+            </div>
+        </div>
+    </div>
+    <div style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%); color: white; padding: 25px; border-radius: 16px; text-align: center; margin: 25px 0;">
+        <h3 style="margin: 0 0 10px 0; font-size: 20px;">🎉 Demande Traitée !</h3>
+        <p style="margin: 0; opacity: 0.9;">Votre demande a été résolue avec succès</p>
+    </div>
+    <p style="text-align: center; color: #718096; font-size: 14px;">Merci de nous avoir fait confiance</p>',
+    1,
+    GETDATE(),
+    GETDATE()
+),
+
+-- Template pour code de validation
+(
+    'CODE_VALIDATION',
+    'Code de validation',
+    'EMAIL',
+    '🔐 Code de Validation - Portail Client',
+    '<p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;">Bonjour,</p>
+    <p style="margin-bottom: 20px; color: #4A5568;">Voici votre code de validation à usage unique :</p>
+    <div style="text-align: center; margin: 30px 0;">
+        <span class="highlight" style="font-size: 32px; letter-spacing: 8px; padding: 15px 30px; background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);">{code}</span>
+    </div>
+    <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 0; color: #92400E; font-size: 14px;">
+            <strong>⚠️ Important :</strong> Ce code est valide pendant 10 minutes. Ne le partagez avec personne.
+        </p>
+    </div>',
+    1,
+    GETDATE(),
+    GETDATE()
+),
+
+-- Template pour intervention planifiée
+(
+    'INTERVENTION_PLANIFIEE',
+    'Intervention planifiée',
+    'EMAIL',
+    '📅 Intervention Planifiée - {reference}',
+    '<p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;">Bonjour {utilisateur},</p>
+    <p style="margin-bottom: 20px; color: #4A5568;">Une intervention a été programmée pour votre demande.</p>
+    <div class=''info-card''>
+        <h3>📅 Planning d''Intervention</h3>
+        <div class=''info-grid''>
+            <div class=''info-row''>
+                <div class=''info-label''>Référence</div>
+                <div class=''info-value''><span class=''highlight''>{reference}</span></div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Date Proposée</div>
+                <div class=''info-value'' style="color: #8B5CF6;">📅 {dateIntervention}</div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Action Requise</div>
+                <div class=''info-value'' style="color: #F59E0B;">⚠️ Confirmation</div>
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="#" class="action-button">✅ Confirmer la Date</a>
+        <a href="#" class="action-button" style="background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%); margin-left: 10px;">🔄 Proposer Autre Date</a>
+    </div>',
+    1,
+    GETDATE(),
+    GETDATE()
+),
+
+-- Template pour intervention confirmée
+(
+    'INTERVENTION_CONFIRMEE',
+    'Intervention confirmée',
+    'EMAIL',
+    '✅ Intervention Confirmée - {reference}',
+    '<p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #2D3748;">Bonjour {utilisateur},</p>
+    <p style="margin-bottom: 20px; color: #4A5568;">Super ! La date d''intervention a été validée avec succès.</p>
+    <div class=''info-card''>
+        <h3>✅ Rendez-vous Confirmé</h3>
+        <div class=''info-grid''>
+            <div class=''info-row''>
+                <div class=''info-label''>Ticket</div>
+                <div class=''info-value''><span class=''highlight''>{reference}</span></div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Date Retenue</div>
+                <div class=''info-value'' style="color: #10B981; font-size: 16px;">🗓️ {dateIntervention}</div>
+            </div>
+            <div class=''info-row''>
+                <div class=''info-label''>Statut</div>
+                <div class=''info-value'' style="color: #10B981;">🎯 Confirmé</div>
+            </div>
+        </div>
+    </div>
+    <div style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%); color: white; padding: 25px; border-radius: 16px; text-align: center; margin: 25px 0;">
+        <h3 style="margin: 0 0 10px 0; font-size: 20px;">🎉 Parfait !</h3>
+        <p style="margin: 0; opacity: 0.9;">Notre équipe interviendra à la date convenue. Préparation en cours...</p>
+    </div>',
+    1,
+    GETDATE(),
+    GETDATE()
+);
+
+-- Vérification de l'insertion
+SELECT code, libelle, sujet FROM notification_template WHERE actif = 1;
