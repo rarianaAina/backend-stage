@@ -10,4 +10,5 @@ import java.util.List;
 public interface InteractionRepository extends JpaRepository<Interaction, Integer> {
   List<Interaction> findByTicketIdOrderByDateCreationDesc(Integer ticketId);
   List<Interaction> findByInterventionIdOrderByDateCreationDesc(Integer interventionId);
+  List<Interaction> findByTicketId(Integer ticketId);
 }
