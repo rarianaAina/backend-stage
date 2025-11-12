@@ -29,7 +29,7 @@ public class CrmSolutionsSyncService {
     }
 
     // Synchronisation planifiée - non interruptible
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "${scheduling.crm-solution-sync-cron:0 0 3 * * *}")
     @Transactional
     public void synchroniserSolutions() {
         System.out.println("🚀 Début de la synchronisation planifiée des solutions - " + LocalDateTime.now());
