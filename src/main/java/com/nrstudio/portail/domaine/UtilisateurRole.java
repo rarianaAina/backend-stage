@@ -1,5 +1,6 @@
 package com.nrstudio.portail.domaine;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
@@ -17,6 +18,7 @@ public class UtilisateurRole {
     @Id
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", nullable = false)
+    @JsonIgnore
     private Utilisateur utilisateur;
 
     @Id

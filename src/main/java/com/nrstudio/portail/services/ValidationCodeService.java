@@ -1,7 +1,9 @@
 package com.nrstudio.portail.services;
 
 import com.nrstudio.portail.domaine.ValidationCode;
+import com.nrstudio.portail.services.notification.EmailNotificationService;
 import com.nrstudio.portail.depots.ValidationCodeRepository;
+import com.nrstudio.portail.depots.UtilisateurRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +29,9 @@ public class ValidationCodeService {
     @Autowired
     private EmailNotificationService emailNotificationService;
     
+    @Autowired
+    private UtilisateurRepository utilisateurRepository;
+
     public ValidationCodeService(ValidationCodeRepository validationCodeRepository) {
         this.validationCodeRepository = validationCodeRepository;
     }
@@ -70,6 +75,10 @@ public class ValidationCodeService {
             // Marquer le code comme utilisé
             validationCode.markAsUsed();
             validationCodeRepository.save(validationCode);
+
+            // Mettre à jour la date de dernière connexion de l'utilisateur
+            mettreAJourDateDerniereConnexion(Integer.parseInt(utilisateurId));
+            
             return true;
         } else {
             // Incrémenter le compteur de tentatives pour ce code (si existant mais invalide)
@@ -130,5 +139,15 @@ public class ValidationCodeService {
      */
     public void cleanupExpiredCodes() {
         validationCodeRepository.deleteExpiredCodes(LocalDateTime.now().minusHours(1));
+    }
+        /**
+        * Met à jour la date de dernière connexion de l'utilisateur
+        */
+    private void mettreAJourDateDerniereConnexion(Integer utilisateurId) {
+        utilisateurRepository.findById(utilisateurId).ifPresent(utilisateur -> {
+            utilisateur.setDateDerniereConnexion(LocalDateTime.now());
+            utilisateurRepository.save(utilisateur);
+            System.out.println("Date de dernière connexion mise à jour pour l'utilisateur: " + utilisateurId);
+        });
     }
 }

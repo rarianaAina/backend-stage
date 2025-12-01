@@ -2,3 +2,23 @@ SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_NAME = 'Company'
   AND TABLE_SCHEMA = 'dbo'; -- souvent 'dbo'
+
+UPDATE cases SET case_stage = 'Waiting' WHERE case_caseid = '40454';
+
+UPDATE utilisateur SET email = 'developpeur4@optimada.mg' WHERE email = 'mitahasoa@hotmail.com';
+
+UPDATE utilisateur SET email = '' WHERE id = '3548';
+
+UPDATE utilisateur SET email = 'developpeur4@optimada.mg' WHERE email = '';
+
+UPDATE utilisateur SET email = '' WHERE email = 'developpeur4@optimada.mg';
+
+UPDATE utilisateur SET email = 'developpeur4@optimada.mg' WHERE id = '3548';
+
+UPDATE utilisateur_role SET role_id = '1' WHERE utilisateur_id = '110';
+
+UPDATE utilisateur_role SET role_id = '3' WHERE utilisateur_id = '110';
+
+UPDATE credit_horaire SET company_id = '896' WHERE id = '539';
+
+UPDATE credit_horaire SET company_id = '619' WHERE id = '536';

@@ -2,15 +2,21 @@ package com.nrstudio.portail.controleurs;
 
 import com.nrstudio.portail.depots.TicketRepository;
 import com.nrstudio.portail.depots.ProduitRepository;
+import com.nrstudio.portail.depots.CompanyRepository;
+import com.nrstudio.portail.depots.utilisateur.UtilisateurInterneRepository;
+import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;
+import com.nrstudio.portail.domaine.Company;
 import com.nrstudio.portail.dto.TicketAvecDetails;
 import com.nrstudio.portail.domaine.Produit;
 import com.nrstudio.portail.domaine.Ticket;
 import com.nrstudio.portail.dto.TicketAvecProduitPageReponse;
 import com.nrstudio.portail.dto.TicketCreationRequete;
 import com.nrstudio.portail.dto.TicketPageReponse;
+import com.nrstudio.portail.dto.solution.SolutionDTO;
 import com.nrstudio.portail.services.TicketService;
-
+import com.nrstudio.portail.services.solution.SolutionService;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -25,7 +31,16 @@ public class TicketControleur {
   private final TicketService service;
 
   @Autowired
+  private SolutionService solutionService;
+
+  @Autowired
   private ProduitRepository produitRepository;
+
+  @Autowired
+  private CompanyRepository companyRepository;
+
+  @Autowired
+  private UtilisateurInterneRepository utilisateurInterneRepository;
 
   public TicketControleur(TicketRepository repo, TicketService service) {
     this.repo = repo;
@@ -52,12 +67,7 @@ public TicketAvecProduitPageReponse listerTicketsAdmin(
     @RequestParam(value = "priorite", required = false) String priorite) {
 
     System.out.println("Récupération des tickets admin avec filtres:");
-    System.out.println("Page: " + page + ", Size: " + size);
-    System.out.println("État: " + etat + ", Référence: " + reference);
-    System.out.println("Produit: " + produit + ", Société: " + societe);
-    System.out.println("Priorité: " + priorite);
-    System.out.println("Date début: " + dateDebut + ", Date fin: " + dateFin);
-
+    
     TicketAvecProduitPageReponse response = service.listerTicketsAdminAvecPaginationEtFiltres(
         page, size, etat, reference, produit, dateDebut, dateFin, societe, priorite);
 
@@ -118,7 +128,7 @@ public TicketAvecProduitPageReponse listerTicketsAdmin(
       ticketAvecDetails.setStatutTicketId(ticket.getStatutTicketId());
       ticketAvecDetails.setTypeTicketId(ticket.getTypeTicketId());
       
-      // Récupérez le nom du produit
+      // Récupération du nom du produit
       if (ticket.getProduitId() != null) {
           try {
               Produit produit = produitRepository.findById(ticket.getProduitId()).orElse(null);
@@ -129,6 +139,36 @@ public TicketAvecProduitPageReponse listerTicketsAdmin(
               System.err.println("Erreur lors de la récupération du produit: " + e.getMessage());
           }
       }
+
+      // Récupération du nom de la company
+      if (ticket.getCompanyId() != null) {
+          try {
+              // Assuming you have a CompanyRepository or similar
+              Company company = companyRepository.findById(ticket.getCompanyId()).orElse(null);
+              if (company != null) {
+                  ticketAvecDetails.setCompanyName(company.getNom());
+              }
+          } catch (Exception e) {
+              System.err.println("Erreur lors de la récupération de la company: " + e.getMessage());
+          }
+      }
+      
+      System.out.println("Affect Id: " + ticket.getAffecteAUtilisateurId());
+      
+      // Récupération du nom de la personne affectée (nécessite un UtilisateurRepository autowired: private UtilisateurRepository utilisateurRepository;)
+      if (ticket.getAffecteAUtilisateurId() != null) {
+        try {
+          UtilisateurInterne utilisateurInterne = utilisateurInterneRepository.findByIdExterneCrm(ticket.getAffecteAUtilisateurId().toString()).orElse(null);
+          System.out.println("Affect utilisateur int " + utilisateurInterne.getNom());
+          if (utilisateurInterne != null) {
+            // Adapter le setter au nom du champ présent dans TicketAvecDetails (ex: setAffectationNom, setNomAffecte, etc.)
+            ticketAvecDetails.setAffecteAUtilisateurNom(utilisateurInterne.getNom() != null ? utilisateurInterne.getNom() : utilisateurInterne.getNom());
+          }
+        } catch (Exception e) {
+          System.err.println("Erreur lors de la récupération de la personne affectée: " + e.getMessage());
+        }
+      }
+
       System.out.println("Ticket avec détails obtenu: " + ticketAvecDetails.getId());
       System.out.println("Produit ID : " + ticketAvecDetails.getProduitId());
       System.out.println("Produit Nom: " + ticketAvecDetails.getProduitNom());
@@ -171,5 +211,17 @@ public TicketAvecProduitPageReponse listerTicketsAdmin(
   @GetMapping("/consultant/{consultantId}")
   public List<Ticket> listerParConsultant(@PathVariable("consultantId") Integer consultantId) {
     return service.listerTicketsConsultant(consultantId);
+  }
+
+  @GetMapping("/{ticketId}/solutions")
+  public ResponseEntity<List<SolutionDTO>> getSolutionsDuTicket(@PathVariable Integer ticketId) {
+      try {
+          List<SolutionDTO> solutions = solutionService.getSolutionsByTicketId(ticketId);
+          return ResponseEntity.ok(solutions);
+      } catch (RuntimeException e) {
+          return ResponseEntity.notFound().build();
+      } catch (Exception e) {
+          return ResponseEntity.internalServerError().build();
+      }
   }
 }

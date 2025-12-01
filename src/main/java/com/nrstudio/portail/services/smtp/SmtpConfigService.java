@@ -76,24 +76,41 @@ public class SmtpConfigService {
         mailSender.setHost(config.getHost());
         mailSender.setPort(config.getPort());
         mailSender.setUsername(config.getUsername());
-        //mailSender.setPassword(decrypt(config.getPassword()));
         mailSender.setPassword(config.getPassword());
         
         Properties props = new Properties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.starttls.required", "true");
         props.put("mail.smtp.connectiontimeout", "10000");
         props.put("mail.smtp.timeout", "10000");
         props.put("mail.smtp.writetimeout", "10000");
-        props.put("mail.smtp.ssl.trust", config.getHost());
+        props.put("mail.debug", "false");
+        
+        // Configuration différente selon le port
+        if (config.getPort() == 465) {
+            // Port 465 - SSL direct
+            props.put("mail.smtp.socketFactory.port", "465");
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            props.put("mail.smtp.socketFactory.fallback", "false");
+            props.put("mail.smtp.ssl.enable", "true");
+            props.put("mail.smtp.ssl.trust", config.getHost());
+            // Désactiver STARTTLS pour le port 465
+            props.put("mail.smtp.starttls.enable", "false");
+        } else if (config.getPort() == 587) {
+            // Port 587 - STARTTLS
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.starttls.required", "true");
+            props.put("mail.smtp.ssl.trust", config.getHost());
+        } else {
+            // Autres ports - configuration par défaut
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.ssl.trust", config.getHost());
+        }
         
         mailSender.setJavaMailProperties(props);
         
         return mailSender;
     }
-    
     public JavaMailSender getMailSender() {
         if (this.mailSender == null) {
             this.mailSender = createMailSender();

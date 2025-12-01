@@ -15,11 +15,13 @@ public class TicketAvecDetails {
     private Integer statutTicketId;
     private Integer typeTicketId;
     private Integer companyId;
+    private String companyName;
     private Integer clientId;
     private Boolean politiqueAcceptee;
     private String raison;
     private Integer creeParUtilisateurId;
     private Integer affecteAUtilisateurId;
+    private String affecteAUtilisateurNom;
     private Integer clotureParUtilisateurId;
     private LocalDateTime dateMiseAJour;
     private String idExterneCrm;
@@ -61,6 +63,12 @@ public class TicketAvecDetails {
     public Integer getCompanyId() { return companyId; }
     public void setCompanyId(Integer companyId) { this.companyId = companyId; }
     
+    public String getAffecteAUtilisateurNom() { return affecteAUtilisateurNom; }
+    public void setAffecteAUtilisateurNom(String affecteAUtilisateurNom) { this.affecteAUtilisateurNom = affecteAUtilisateurNom;}
+
+    public String getCompanyName() { return companyName; }
+    public void setCompanyName(String companyName) { this.companyName = companyName; }
+
     public Integer getClientId() { return clientId; }
     public void setClientId(Integer clientId) { this.clientId = clientId; }
     

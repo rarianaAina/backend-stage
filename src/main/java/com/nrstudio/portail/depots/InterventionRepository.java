@@ -4,6 +4,7 @@ import com.nrstudio.portail.domaine.Intervention;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,4 +13,5 @@ public interface InterventionRepository extends JpaRepository<Intervention, Inte
   List<Intervention> findByTicketId(Integer ticketId);
   List<Intervention> findByCreeParUtilisateurId(Integer utilisateurId);
   Optional<Intervention> findByIdExterneCrm(Integer idExterneCrm);
+  List<Intervention> findByDateInterventionAfter(LocalDateTime date);
 }

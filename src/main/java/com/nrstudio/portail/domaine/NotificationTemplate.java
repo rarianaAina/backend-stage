@@ -16,13 +16,13 @@ public class NotificationTemplate {
     @Column(name = "libelle", nullable = false)
     private String libelle;
     
-    @Column(name = "canal", nullable = false)
+    @Column(name = "canal")
     private String canal;
     
-    @Column(name = "sujet", nullable = false)
+    @Column(name = "sujet")
     private String sujet;
     
-    @Column(name = "contenu_html", columnDefinition = "TEXT")
+    @Column(name = "contenu_html", columnDefinition = "nvarchar(MAX)")
     private String contenuHtml;
     
     @Column(name = "actif", nullable = false)
@@ -31,8 +31,8 @@ public class NotificationTemplate {
     @Column(name = "date_creation", nullable = false)
     private LocalDateTime dateCreation = LocalDateTime.now();
     
-    @Column(name = "date_mise_a_jour")
-    private LocalDateTime dateMiseAJour;
+    @Column(name = "date_mise_a_jour", nullable = false)
+    private LocalDateTime dateMiseAJour = LocalDateTime.now();
     
     // Getters and Setters
     public Integer getId() { return id; }

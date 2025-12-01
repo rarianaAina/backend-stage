@@ -19,8 +19,10 @@ public class TypeNotification {
     @Column(name = "description")
     private String description;
     
-    @Column(name = "template_id")
-    private Integer templateId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_id")
+    private NotificationTemplate template;
     
     @Column(name = "est_actif", nullable = false)
     private Boolean estActif = true;
@@ -40,8 +42,11 @@ public class TypeNotification {
     public void setLibelle(String libelle) { this.libelle = libelle; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public Integer getTemplateId() { return templateId; }
-    public void setTemplateId(Integer templateId) { this.templateId = templateId; }
+    
+    // ✅ CORRECTION : Getter/Setter pour template au lieu de templateId
+    public NotificationTemplate getTemplate() { return template; }
+    public void setTemplate(NotificationTemplate template) { this.template = template; }
+    
     public Boolean getEstActif() { return estActif; }
     public void setEstActif(Boolean estActif) { this.estActif = estActif; }
     public LocalDateTime getDateCreation() { return dateCreation; }

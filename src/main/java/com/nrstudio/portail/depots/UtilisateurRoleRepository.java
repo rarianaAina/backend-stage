@@ -24,6 +24,8 @@ public interface UtilisateurRoleRepository extends JpaRepository<UtilisateurRole
     boolean existsByUtilisateurIdAndRoleIdIn(@Param("utilisateurId") Integer utilisateurId, 
                                            @Param("roleIds") List<Integer> roleIds);
 
+       @Query("SELECT r.code FROM UtilisateurRole ur JOIN ur.role r WHERE ur.utilisateur.id = :utilisateurId")
+       List<String> findRoleCodesByUtilisateurId(@Param("utilisateurId") Integer utilisateurId);
 
 
 }

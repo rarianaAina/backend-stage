@@ -1,0 +1,36 @@
+- Rajout de l'onglet whatsapp dans la configuration admin
+- Pour chaque étape, rajouter aussi un workflow dans la liste des types de notifications
+- Interface pour la configuration des templates des emails
+- Possibilité de suppimer toutes les configurations de workflow et ensuite sauvegarder la configuration
+- Changer la sauvegarde en synchronisation
+- Rajouter plus de types dans les interactions dans les détails d'un ticket pour que le client puisse voir tout
+- interface pour le choix des synchronisations à faire
+- Trouver toutes les API pour insérer dans la base de données
+
+
+
+13/11/2025
+
+configuration pour le choix de whatsapp
+liste déroulante pour les langues
+
+896
+
+
+18/11/2025
+
+Le client a la possibilité de répondre a une solution spécifique et le support technique aura un mail avec la référence de la solution qui a été répondue par le client
+Et le technicien pourra ensuite modifier la solution créée et rajouter une autre solution
+Le client devrait avoir la possibilité de voir son interlocuteur, qui prend en charge son ticket
+
+L'admin pourra définir quels contacts seront affectés à telle société ou telle
+
+Dans mes produits (client) rajouter une colonne pour interlocuteur
+
+Il faut récupérer l'interlocuteur chargé de chaque produit dans CRM
+
+Le client saisi qlq chose si c'est solution KO sinon un bouton pour dire que ticket à clôturer
+
+Vérifier la date d'ajout d'une solution pour pouvoir relancer automatiquement le client si aucune réponse de sa part
+
+Délai de relance (sans réponse d'une solution) configurable

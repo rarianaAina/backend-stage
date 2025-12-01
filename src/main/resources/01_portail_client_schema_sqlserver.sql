@@ -349,6 +349,8 @@ CREATE TABLE dbo.piece_jointe (
     url_contenu                 NVARCHAR(1000) NULL,
     chemin_fichier              NVARCHAR(1000) NULL,
     type_mime                   NVARCHAR(200) NULL,
+    commentaires                NVARCHAR(500) NULL,
+    id_externe_crm              NVARCHAR(255) UNIQUE NOT NULL,
     taille_octets               BIGINT NULL,
     ajoute_par_utilisateur_id   INT NOT NULL,
     ticket_id                   INT NULL,
@@ -462,6 +464,7 @@ CREATE TABLE dbo.CompanyPARC (
     date_obtention DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
 );
 
+ALTER TABLE dbo.CompanyPARC ADD userId INT NULL;
 CREATE TABLE ValidationCodes (
     Id BIGINT IDENTITY(1,1) PRIMARY KEY,
     utilisateur_id NVARCHAR(128) NOT NULL, -- ou INT selon votre structure d'utilisateurs
@@ -491,6 +494,37 @@ CREATE TABLE type_notification (
     date_modification DATETIME2 NULL
 );
 
+CREATE TABLE solutions (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id_externe_crm NVARCHAR(255) UNIQUE NOT NULL,
+    titre NVARCHAR(500),
+    description NVARCHAR(MAX),
+    zone NVARCHAR(100),
+    statut NVARCHAR(50),
+    etape NVARCHAR(50),
+    reference NVARCHAR(255),
+    secteur NVARCHAR(100),
+    cloture BIT DEFAULT 0,
+    supprime BIT DEFAULT 0,
+    date_creation DATETIME2,
+    date_mise_a_jour DATETIME2,
+    date_externalisation DATETIME2,
+    date_synchronisation DATETIME2,
+    cree_par INT,
+    mis_a_jour_par INT,
+    utilisateur_attribue INT,
+    workflow_id INT,
+    canal_id INT,
+    cle_externe_talend NVARCHAR(255)
+);
+ALTER TABLE solutions ADD date_cloture DATETIME;
+-- Création des index
+CREATE INDEX idx_solutions_id_externe_crm ON solutions(id_externe_crm);
+CREATE INDEX idx_solutions_statut ON solutions(statut);
+CREATE INDEX idx_solutions_zone ON solutions(zone);
+CREATE INDEX idx_solutions_cloture ON solutions(cloture);
+CREATE INDEX idx_solutions_date_creation ON solutions(date_creation);
+CREATE INDEX idx_solutions_date_synchronisation ON solutions(date_synchronisation);
 -- Création de la table workflow_notification_mail
 CREATE TABLE workflow_notification_mail (
     id INT IDENTITY(1,1) PRIMARY KEY,
@@ -542,6 +576,73 @@ CREATE TABLE configuration_smtp (
     date_modification DATETIME2
 );
 
+-- Création de la table des réponses aux solutions
+CREATE TABLE reponses_solution (
+    id bigint IDENTITY(1,1) PRIMARY KEY,
+    solution_id bigint NOT NULL,
+    est_valide bit NOT NULL,  -- 1 = Solution OK, 0 = Solution KO
+    commentaire nvarchar(MAX) NULL,  -- Commentaire explicatif si KO
+    date_reponse datetime2 NOT NULL DEFAULT GETDATE(),
+    cree_par int NOT NULL,  -- Utilisateur qui a répondu
+    canal_reponse nvarchar(50) NOT NULL DEFAULT 'web',  -- 'web', 'mobile', 'email', etc.
+    
+    -- Contrainte de clé étrangère vers la table solutions
+    CONSTRAINT FK_reponses_solution_solution_id 
+        FOREIGN KEY (solution_id) 
+        REFERENCES solutions(id)
+        ON DELETE CASCADE,
+    
+);
+
+-- Création d'un index pour améliorer les performances des requêtes par solution_id
+CREATE INDEX IX_reponses_solution_solution_id 
+    ON reponses_solution (solution_id);
+
+-- Création d'un index pour les requêtes par date
+CREATE INDEX IX_reponses_solution_date_reponse 
+    ON reponses_solution (date_reponse);
+
+-- Création d'un index pour les requêtes par utilisateur
+CREATE INDEX IX_reponses_solution_cree_par 
+    ON reponses_solution (cree_par);
+
+-- Optionnel : Index pour les recherches par statut de validation
+CREATE INDEX IX_reponses_solution_est_valide 
+    ON reponses_solution (est_valide);
+
+CREATE TABLE configuration_whatsapp (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    api_base_url VARCHAR(255) NOT NULL DEFAULT 'https://waba.360dialog.io/v1/messages', -- URL par défaut de l'API
+    api_key VARCHAR(500) NOT NULL, -- Clé API 360dialog (à chiffrer)
+    phone_number_id VARCHAR(100) NOT NULL, -- ID du numéro WhatsApp configuré
+    business_account_id VARCHAR(100) NULL, -- ID du compte WhatsApp Business (optionnel)
+    webhook_url VARCHAR(255) NULL, -- URL où ton app reçoit les statuts de message
+    webhook_token VARCHAR(255) NULL, -- jeton de vérification du webhook (si utilisé)
+    est_actif BIT DEFAULT 1, -- pour activer/désactiver la config
+    nom_configuration VARCHAR(100) DEFAULT 'Défaut',
+    description NVARCHAR(500) NULL,
+    date_creation DATETIME2 DEFAULT GETDATE(),
+    date_modification DATETIME2
+);
+
+-- Vue pour obtenir les solutions avec indication de réponse et détails de la dernière réponse
+CREATE VIEW vw_solutions_avec_reponse AS
+SELECT 
+    s.*,
+    CASE 
+        WHEN rs.id IS NOT NULL THEN 1 
+        ELSE 0 
+    END AS a_reponse,
+    rs.est_valide AS derniere_reponse_valide,
+    rs.date_reponse AS date_derniere_reponse,
+    rs.commentaire AS commentaire_derniere_reponse
+FROM solutions s
+LEFT JOIN (
+    SELECT DISTINCT ON (solution_id) *
+    FROM reponses_solution 
+    ORDER BY solution_id, date_reponse DESC
+) rs ON s.id = rs.solution_id;
+
 -- Vue pour faciliter la consultation du workflow avec toutes les informations
 CREATE VIEW v_workflow_notification_complet AS
 SELECT 
@@ -578,138 +679,33 @@ LEFT JOIN notification_template nt ON tn.template_id = nt.id
 WHERE wn.est_actif = 1 AND tn.est_actif = 1
 ORDER BY tn.code, wn.ordre;
 
--- Procédure stockée pour ajouter une règle au workflow
-CREATE PROCEDURE sp_ajouter_regle_workflow
-    @ordre INT,
-    @utilisateur_id INT,
-    @type_notification_code VARCHAR(50),
-    @est_actif BIT = 1
-AS
-BEGIN
-    DECLARE @type_notification_id INT
-    
-    SELECT @type_notification_id = id 
-    FROM type_notification 
-    WHERE code = @type_notification_code
-    
-    IF @type_notification_id IS NOT NULL
-    BEGIN
-        INSERT INTO workflow_notification_mail (ordre, utilisateur_id, type_notification_id, est_actif)
-        VALUES (@ordre, @utilisateur_id, @type_notification_id, @est_actif)
-    END
-    ELSE
-    BEGIN
-        RAISERROR('Type de notification non trouvé', 16, 1)
-    END
-END;
+CREATE TABLE scheduling_configuration (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    job_name VARCHAR(100) NOT NULL UNIQUE,
+    job_description NVARCHAR(255) NULL,
+    cron_expression VARCHAR(50) NOT NULL,
+    display_name NVARCHAR(100) NOT NULL,
+    schedule_type VARCHAR(20) NOT NULL DEFAULT 'CUSTOM',
+    enabled BIT NOT NULL DEFAULT 1,
+    last_modified DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    last_modified_by VARCHAR(100) NULL,
+    created_date DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
 
--- Créer un nouveau code
-CREATE PROCEDURE sp_CreateValidationCode
-    @utilisateur_id NVARCHAR(128),
-    @Code CHAR(4),
-    @ExpiryMinutes INT = 10
-AS
-BEGIN
-    INSERT INTO ValidationCodes (utilisateur_id, Code, ExpiresAt)
-    VALUES (@utilisateur_id, @Code, DATEADD(MINUTE, @ExpiryMinutes, GETUTCDATE()));
-    
-    SELECT SCOPE_IDENTITY() AS CodeId;
-END
+-- Index pour améliorer les performances
+CREATE INDEX idx_scheduling_configuration_job_name ON scheduling_configuration(job_name);
+CREATE INDEX idx_scheduling_configuration_enabled ON scheduling_configuration(enabled);
 
--- Valider un code
-CREATE PROCEDURE sp_ValidateCode
-    @utilisateur_id NVARCHAR(128),
-    @Code CHAR(4)
-AS
-BEGIN
-    DECLARE @CodeId BIGINT, @IsValid BIT = 0, @Message NVARCHAR(100);
-
-    SELECT @CodeId = Id 
-    FROM ValidationCodes 
-    WHERE utilisateur_id = @utilisateur_id 
-      AND Code = @Code
-      AND ExpiresAt > GETUTCDATE()
-      AND IsUsed = 0
-      AND Attempts < MaxAttempts;
-
-    IF @CodeId IS NOT NULL
-    BEGIN
-        UPDATE ValidationCodes 
-        SET IsUsed = 1, UsedAt = GETUTCDATE()
-        WHERE Id = @CodeId;
-        
-        SET @IsValid = 1;
-        SET @Message = 'Code valide';
-    END
-    ELSE
-    BEGIN
-        -- Incrémenter les tentatives si code existe mais invalide
-        UPDATE ValidationCodes 
-        SET Attempts = Attempts + 1
-        WHERE utilisateur_id = @utilisateur_id AND Code = @Code AND IsUsed = 0;
-        
-        SET @Message = 'Code invalide ou expiré';
-    END
-
-    SELECT @IsValid AS IsValid, @Message AS Message;
-END
-/* =========================================================
-   Donnees de base (seeds) minimales
-========================================================= */
-INSERT INTO dbo.role(code, libelle) VALUES
-('CLIENT','Client'),
-('CONSULTANT','Consultant'),
-('ADMIN','Administrateur');
-
-INSERT INTO dbo.priorite_ticket(code, libelle, niveau) VALUES
-('URGENT','Urgent', 3),('HAUTE','Haute',2),('NORMALE','Normale',1),('BASSE','Basse',0);
-
-INSERT INTO dbo.type_ticket(code, libelle) VALUES
-('INCIDENT','Incident'),('DEMANDE','Demande'),('EVOLUTION','Evolution'),('QUESTION','Question');
-
-INSERT INTO dbo.statut_ticket(code, libelle, ordre_affichage) VALUES
-('OUVERT','Ouvert',10),
-('EN_COURS','En cours',20),
-('EN_ATTENTE','En attente',30),
-('EN_ATTENTE_CLIENT','En attente du client',40),
-('PLANIFIE','Planifie',50),
-('RESOLU','Resolue',60),
-('CLOTURE','Cloture',70);
-
-INSERT INTO dbo.statut_intervention(code, libelle, ordre_affichage) VALUES
-('PROPOSEE','Proposee',10),
-('PLANIFIEE','Planifiee',20),
-('EN_COURS','En cours',30),
-('A_VALIDER_CLIENT','A valider par le client',40),
-('REFUSEE','Refusee',50),
-('CLOTUREE','Cloturee',60);
-
-INSERT INTO dbo.modalite_intervention(code, libelle) VALUES
-('SITE','Sur site'),
-('DISTANCE','A distance');
-
-INSERT INTO dbo.type_interaction(code, libelle) VALUES
-('MESSAGE','Message'),
-('SYSTEME','Systeme'),
-('RELANCE','Relance');
-
-INSERT INTO dbo.canal_interaction(code, libelle) VALUES
-('PORTAIL','Portail'),
-('EMAIL','Email'),
-('WHATSAPP','WhatsApp');
-
--- Insertion des types de notification spécifiques
-INSERT INTO type_notification (code, libelle, description) VALUES
-('CREATION_TICKET', 'Création de ticket', 'Notification envoyée lors de la création d''un nouveau ticket'),
-('MODIFICATION_STATUT_TICKET', 'Modification statut ticket', 'Notification envoyée lors du changement de statut d''un ticket'),
-('AJOUT_SOLUTION', 'Ajout d''une solution', 'Notification envoyée lors de l''ajout d''une solution à un ticket'),
-('CLOTURE_TICKET', 'Clôture d''un ticket', 'Notification envoyée lors de la clôture d''un ticket');
-
--- Insertion de données exemple pour le workflow
--- Exemple pour la création de ticket : envoi d'abord au créateur, puis au responsable
-INSERT INTO workflow_notification_mail (ordre, utilisateur_id, type_notification_id) VALUES
-(1, 1870, 1),  -- Premier envoi pour création ticket (créateur)
-(2, 1914, 1),  -- Deuxième envoi pour création ticket (responsable)
-
+-- Insertion des configurations initiales CORRIGÉES
+INSERT INTO scheduling_configuration 
+(job_name, job_description, cron_expression, display_name, schedule_type, enabled) 
+VALUES 
+('crm-company-sync', 'Synchronisation des entreprises CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-ch-sync', 'Synchronisation CH CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-person-sync', 'Synchronisation des personnes CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-product-sync', 'Synchronisation des produits CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-ticket-sync', 'Synchronisation des tickets CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-solution-sync', 'Synchronisation des solutions CRM', '0 0 * * * *', 'Toutes les heures', 'HOURLY', 1),
+('crm-solutick-sync', 'Synchronisation Solutick CRM', '0 0 * * * *', 'Toutes les heures', 'HOURLY', 1);
 
 GO

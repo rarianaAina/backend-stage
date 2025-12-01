@@ -30,4 +30,6 @@ public interface WorkflowNotificationMailRepository extends JpaRepository<Workfl
     List<WorkflowNotificationMail> findByTypeNotificationIdActif(@Param("typeNotificationId") Integer typeNotificationId);
     
     void deleteByTypeNotificationId(Integer typeNotificationId);
+
+    List<WorkflowNotificationMail> findByTypeNotificationId(Integer typeNotificationId);
 }

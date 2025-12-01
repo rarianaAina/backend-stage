@@ -27,6 +27,8 @@ public class CompanyPARC {
     @Column(name = "date_obtention")
     private LocalDateTime dateObtention;
 
+    @Column(name = "userId", nullable = true)
+    private Integer userId;
     // Getters and Setters
 
     public LocalDateTime getDateObtention() {
@@ -74,5 +76,12 @@ public class CompanyPARC {
 
     public void setCompName(String compName) {
         this.compName = compName;
+    }
+
+    public Integer getUserId() {
+        return userId;
+    }
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
 }
