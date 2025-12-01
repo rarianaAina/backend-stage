@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: backend-stage-2
+    env: java
+    buildCommand: "./mvnw clean package -DskipTests"
+    startCommand: "java -jar target/portail-backend-0.0.1-SNAPSHOT.jar"
