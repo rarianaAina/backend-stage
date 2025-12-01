@@ -1,6 +1,7 @@
 package com.nrstudio.portail.services;
 
 import com.nrstudio.portail.domaine.ValidationCode;
+import com.nrstudio.portail.services.notification.EmailNotificationService;
 import com.nrstudio.portail.depots.ValidationCodeRepository;
 import com.nrstudio.portail.depots.UtilisateurRepository;
 

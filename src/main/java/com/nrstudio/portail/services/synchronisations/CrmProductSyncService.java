@@ -6,7 +6,6 @@ import com.nrstudio.portail.domaine.CompanyPARC;
 import com.nrstudio.portail.domaine.Produit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +37,7 @@ public class CrmProductSyncService {
   }
 
   // Synchronisation planifiée - non interruptible
-  @Scheduled(cron = "${scheduling.crm-product-sync-cron:0 * * * * *}")
+  //@Scheduled(cron = "${scheduling.crm-product-sync-cron:0 * * * * *}")
   @Transactional
   public void synchroniserProduits() {
     log.info("🚀 Début de la synchronisation planifiée des produits");
@@ -166,7 +165,7 @@ public class CrmProductSyncService {
 
   private void synchroniserCompanyPARCManuellement() {
     final String sql = 
-        "SELECT parc_PARCid, parc_name, parc_companyid, parc_CreatedDate, Comp_CompanyId, Comp_Name " +
+        "SELECT parc_PARCid, parc_name,parc_UserId, parc_companyid, parc_CreatedDate, Comp_CompanyId, Comp_Name " +
         "FROM dbo.vCompanyPARC";
 
     List<Map<String, Object>> rows = crmJdbc.queryForList(sql);
@@ -198,6 +197,7 @@ public class CrmProductSyncService {
 
   private void traiterProduitParc(Map<String, Object> r) {
     Integer parcId = toInt(r.get("parc_PARCid"));
+    
     if (parcId == null) return;
     if (toInt(r.get("parc_Deleted")) == 1) return;
 
@@ -234,6 +234,7 @@ public class CrmProductSyncService {
 
   private void traiterCompanyParc(Map<String, Object> r) {
     Integer parcId = toInt(r.get("parc_PARCid"));
+    Integer userId = toInt(r.get("parc_UserId"));
     if (parcId == null) return;
 
     CompanyPARC companyPARCExistant = companyPARCRepository.findById(parcId).orElse(null);
@@ -251,6 +252,7 @@ public class CrmProductSyncService {
       companyPARCExistant.setCompCompanyId(compCompanyId);
       companyPARCExistant.setCompName(compName);
       companyPARCExistant.setDateObtention(createdDate);
+      companyPARCExistant.setUserId(userId);
       companyPARCRepository.save(companyPARCExistant);
     } else {
       CompanyPARC nouveauCompanyPARC = new CompanyPARC();
@@ -260,6 +262,7 @@ public class CrmProductSyncService {
       nouveauCompanyPARC.setCompCompanyId(compCompanyId);
       nouveauCompanyPARC.setCompName(compName);
       nouveauCompanyPARC.setDateObtention(createdDate);
+      companyPARCExistant.setUserId(userId);
       companyPARCRepository.save(nouveauCompanyPARC);
     }
   }

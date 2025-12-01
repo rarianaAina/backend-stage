@@ -50,13 +50,13 @@ public class CreditHoraire {
     @Column(name = "date_mise_a_jour", nullable = false)
     private LocalDateTime dateMiseAJour;
 
-    // @PrePersist
-    // protected void onCreate() {
-    //     dateCreation = LocalDateTime.now();
-    //     dateMiseAJour = LocalDateTime.now();
-    //     if (heuresRestantes == null) {
-    //         heuresRestantes = heuresAllouees - heuresConsommees;
-    //     }
-    // }
+    @PrePersist
+    protected void onCreate() {
+        dateCreation = LocalDateTime.now();
+        dateMiseAJour = LocalDateTime.now();
+        if (heuresRestantes == null) {
+            heuresRestantes = heuresAllouees - heuresConsommees;
+        }
+    }
 
 }

@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SolutionTicketRepository extends JpaRepository<SolutionTicket, Long> {
@@ -26,4 +27,6 @@ public interface SolutionTicketRepository extends JpaRepository<SolutionTicket, 
     // Trouver les solutions d'un ticket avec jointure
     @Query("SELECT st.solution FROM SolutionTicket st WHERE st.ticket.id = :ticketId")
     List<Solution> findSolutionsByTicketId(@Param("ticketId") Integer ticketId);
+
+    Optional<SolutionTicket> findBySolution(Solution solution);
 }

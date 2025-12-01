@@ -1,4 +1,4 @@
-package com.nrstudio.portail.services;
+package com.nrstudio.portail.services.credithoraire;
 
 import com.nrstudio.portail.depots.CreditHoraireRepository;
 import com.nrstudio.portail.depots.CompanyRepository;

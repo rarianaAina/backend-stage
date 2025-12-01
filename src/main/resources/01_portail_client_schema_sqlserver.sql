@@ -349,6 +349,8 @@ CREATE TABLE dbo.piece_jointe (
     url_contenu                 NVARCHAR(1000) NULL,
     chemin_fichier              NVARCHAR(1000) NULL,
     type_mime                   NVARCHAR(200) NULL,
+    commentaires                NVARCHAR(500) NULL,
+    id_externe_crm              NVARCHAR(255) UNIQUE NOT NULL,
     taille_octets               BIGINT NULL,
     ajoute_par_utilisateur_id   INT NOT NULL,
     ticket_id                   INT NULL,
@@ -462,6 +464,7 @@ CREATE TABLE dbo.CompanyPARC (
     date_obtention DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
 );
 
+ALTER TABLE dbo.CompanyPARC ADD userId INT NULL;
 CREATE TABLE ValidationCodes (
     Id BIGINT IDENTITY(1,1) PRIMARY KEY,
     utilisateur_id NVARCHAR(128) NOT NULL, -- ou INT selon votre structure d'utilisateurs
@@ -514,7 +517,7 @@ CREATE TABLE solutions (
     canal_id INT,
     cle_externe_talend NVARCHAR(255)
 );
-ALTER TABLE solutions ADD COLUMN date_cloture DATETIME;
+ALTER TABLE solutions ADD date_cloture DATETIME;
 -- Création des index
 CREATE INDEX idx_solutions_id_externe_crm ON solutions(id_externe_crm);
 CREATE INDEX idx_solutions_statut ON solutions(statut);
@@ -573,6 +576,40 @@ CREATE TABLE configuration_smtp (
     date_modification DATETIME2
 );
 
+-- Création de la table des réponses aux solutions
+CREATE TABLE reponses_solution (
+    id bigint IDENTITY(1,1) PRIMARY KEY,
+    solution_id bigint NOT NULL,
+    est_valide bit NOT NULL,  -- 1 = Solution OK, 0 = Solution KO
+    commentaire nvarchar(MAX) NULL,  -- Commentaire explicatif si KO
+    date_reponse datetime2 NOT NULL DEFAULT GETDATE(),
+    cree_par int NOT NULL,  -- Utilisateur qui a répondu
+    canal_reponse nvarchar(50) NOT NULL DEFAULT 'web',  -- 'web', 'mobile', 'email', etc.
+    
+    -- Contrainte de clé étrangère vers la table solutions
+    CONSTRAINT FK_reponses_solution_solution_id 
+        FOREIGN KEY (solution_id) 
+        REFERENCES solutions(id)
+        ON DELETE CASCADE,
+    
+);
+
+-- Création d'un index pour améliorer les performances des requêtes par solution_id
+CREATE INDEX IX_reponses_solution_solution_id 
+    ON reponses_solution (solution_id);
+
+-- Création d'un index pour les requêtes par date
+CREATE INDEX IX_reponses_solution_date_reponse 
+    ON reponses_solution (date_reponse);
+
+-- Création d'un index pour les requêtes par utilisateur
+CREATE INDEX IX_reponses_solution_cree_par 
+    ON reponses_solution (cree_par);
+
+-- Optionnel : Index pour les recherches par statut de validation
+CREATE INDEX IX_reponses_solution_est_valide 
+    ON reponses_solution (est_valide);
+
 CREATE TABLE configuration_whatsapp (
     id INT IDENTITY(1,1) PRIMARY KEY,
     api_base_url VARCHAR(255) NOT NULL DEFAULT 'https://waba.360dialog.io/v1/messages', -- URL par défaut de l'API
@@ -587,6 +624,24 @@ CREATE TABLE configuration_whatsapp (
     date_creation DATETIME2 DEFAULT GETDATE(),
     date_modification DATETIME2
 );
+
+-- Vue pour obtenir les solutions avec indication de réponse et détails de la dernière réponse
+CREATE VIEW vw_solutions_avec_reponse AS
+SELECT 
+    s.*,
+    CASE 
+        WHEN rs.id IS NOT NULL THEN 1 
+        ELSE 0 
+    END AS a_reponse,
+    rs.est_valide AS derniere_reponse_valide,
+    rs.date_reponse AS date_derniere_reponse,
+    rs.commentaire AS commentaire_derniere_reponse
+FROM solutions s
+LEFT JOIN (
+    SELECT DISTINCT ON (solution_id) *
+    FROM reponses_solution 
+    ORDER BY solution_id, date_reponse DESC
+) rs ON s.id = rs.solution_id;
 
 -- Vue pour faciliter la consultation du workflow avec toutes les informations
 CREATE VIEW v_workflow_notification_complet AS
@@ -624,6 +679,33 @@ LEFT JOIN notification_template nt ON tn.template_id = nt.id
 WHERE wn.est_actif = 1 AND tn.est_actif = 1
 ORDER BY tn.code, wn.ordre;
 
+CREATE TABLE scheduling_configuration (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    job_name VARCHAR(100) NOT NULL UNIQUE,
+    job_description NVARCHAR(255) NULL,
+    cron_expression VARCHAR(50) NOT NULL,
+    display_name NVARCHAR(100) NOT NULL,
+    schedule_type VARCHAR(20) NOT NULL DEFAULT 'CUSTOM',
+    enabled BIT NOT NULL DEFAULT 1,
+    last_modified DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    last_modified_by VARCHAR(100) NULL,
+    created_date DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
 
+-- Index pour améliorer les performances
+CREATE INDEX idx_scheduling_configuration_job_name ON scheduling_configuration(job_name);
+CREATE INDEX idx_scheduling_configuration_enabled ON scheduling_configuration(enabled);
+
+-- Insertion des configurations initiales CORRIGÉES
+INSERT INTO scheduling_configuration 
+(job_name, job_description, cron_expression, display_name, schedule_type, enabled) 
+VALUES 
+('crm-company-sync', 'Synchronisation des entreprises CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-ch-sync', 'Synchronisation CH CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-person-sync', 'Synchronisation des personnes CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-product-sync', 'Synchronisation des produits CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-ticket-sync', 'Synchronisation des tickets CRM', '0 0 3 * * *', 'Tous les jours à 3h', 'DAILY', 1),
+('crm-solution-sync', 'Synchronisation des solutions CRM', '0 0 * * * *', 'Toutes les heures', 'HOURLY', 1),
+('crm-solutick-sync', 'Synchronisation Solutick CRM', '0 0 * * * *', 'Toutes les heures', 'HOURLY', 1);
 
 GO

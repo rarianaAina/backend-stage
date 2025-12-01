@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import com.nrstudio.portail.depots.utilisateur.UtilisateurInterneRepository;
 import com.nrstudio.portail.domaine.utilisateur.UtilisateurInterne;
+import com.nrstudio.portail.services.notification.EmailNotificationService;
 
 @Service
 public class NotificationWorkflowService {
@@ -126,6 +127,10 @@ public class NotificationWorkflowService {
                 case "CREATION_TICKET":
                     envoyerNotificationCreationTicket(null, utilisateurInterne, ticket, templateOpt);
                     break;
+                
+                case "CREATION_REPONSE_SOLUTION":
+                    envoyerNotificationCreationReponseSolution(utilisateurInterne, ticket, templateOpt);
+                    break;
                     
                 case "MODIFICATION_STATUT_TICKET":
                     if (parametres.length >= 2) {
@@ -209,6 +214,36 @@ public class NotificationWorkflowService {
     }
     
     /**
+     * Envoi notification création de réponse solution (version avec les deux types d'utilisateurs)
+     */
+    private void envoyerNotificationCreationReponseSolution(UtilisateurInterne utilisateurInterne, 
+                                                  Ticket ticket, Optional<NotificationTemplate> templateOpt) {
+        
+        String email = utilisateurInterne != null ? utilisateurInterne.getEmail() : null;
+        String telephone = utilisateurInterne != null ? utilisateurInterne.getTelephone() : null;
+        if (email != null) {
+            if (templateOpt.isPresent()) {
+                NotificationTemplate template = templateOpt.get();
+                emailService.envoyerEmailAvecTemplate(
+                    email,
+                    template.getSujet().replace("{reference}", ticket.getReference()),
+                    template.getContenuHtml()
+                        .replace("{reference}", ticket.getReference())
+                        .replace("{titre}", ticket.getTitre())
+
+                );
+            } 
+        }
+        
+        if (telephone != null) {
+            whatsAppService.envoyerNotificationTicketCree(
+                telephone,
+                ticket.getReference(),
+                ticket.getTitre()
+            );
+        }
+    }
+    /**
      * Envoi notification changement de statut (version avec les deux types d'utilisateurs)
      */
     private void envoyerNotificationChangementStatut(Utilisateur utilisateur, UtilisateurInterne utilisateurInterne, 
@@ -277,6 +312,7 @@ public class NotificationWorkflowService {
                     template.getSujet().replace("{reference}", ticket.getReference()),
                     template.getContenuHtml()
                         .replace("{reference}", ticket.getReference())
+                        .replace("{titre}", ticket.getTitre())
                         .replace("{utilisateur}", nom)
                 );
             } else {

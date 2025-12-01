@@ -27,4 +27,7 @@ public interface UtilisateurInterneRepository extends JpaRepository<UtilisateurI
     Optional<UtilisateurInterne> findByEmail(String email);
     //find by identifiant
     Optional<UtilisateurInterne> findByIdentifiant(String identifiant);
+
+    @Query("SELECT CONCAT(u.prenom, ' ', u.nom) FROM UtilisateurInterne u WHERE u.idExterneCrm = :userId")
+    Optional<String> findUserFullNameByIdExterneCrm(@Param("userId") Integer userId);
 }

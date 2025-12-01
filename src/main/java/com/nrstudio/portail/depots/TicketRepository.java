@@ -18,4 +18,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
     @Query("SELECT t FROM Ticket t WHERE t.dateCreation BETWEEN :debut AND :fin")
     List<Ticket> findByDateCreationBetween(@Param("debut") LocalDateTime debut, 
                                           @Param("fin") LocalDateTime fin);
+
+    Optional<Ticket> findByReferenceId(String referenceId);
+
 }

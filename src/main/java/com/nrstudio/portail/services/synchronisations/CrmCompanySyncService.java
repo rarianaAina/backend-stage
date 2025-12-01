@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 public class CrmCompanySyncService {
 
     @Autowired
+    @Qualifier("crmJdbc")
     private JdbcTemplate crmJdbc;
 
     @Autowired
@@ -38,7 +39,6 @@ public class CrmCompanySyncService {
     private final AtomicBoolean syncPlanifieeEnCours = new AtomicBoolean(false);
 
     // Exécution planifiée - version sécurisée
-    @Scheduled(cron = "${scheduling.crm-company-sync-cron:0 * * * * *}")
     @Transactional
     public void synchroniserCompanies() {
         // Éviter les chevauchements avec la sync manuelle

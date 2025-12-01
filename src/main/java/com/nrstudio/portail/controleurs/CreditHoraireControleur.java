@@ -2,7 +2,8 @@ package com.nrstudio.portail.controleurs;
 
 import com.nrstudio.portail.depots.ProduitRepository;
 import com.nrstudio.portail.dto.CreditHoraireDto;
-import com.nrstudio.portail.services.CreditHoraireService;
+import com.nrstudio.portail.services.credithoraire.CreditHoraireService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

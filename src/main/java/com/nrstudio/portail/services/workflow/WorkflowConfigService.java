@@ -78,27 +78,55 @@ public class WorkflowConfigService {
             
             TypeNotification typeNotification = typeOpt.get();
             
-            // Supprimer les anciennes étapes
-            workflowRepository.deleteByTypeNotificationId(typeNotification.getId());
+            // Récupérer les étapes existantes pour ce type de notification
+            List<WorkflowNotificationMail> existingSteps = workflowRepository.findByTypeNotificationId(typeNotification.getId());
+            Map<Integer, WorkflowNotificationMail> existingStepsMap = existingSteps.stream()
+                    .collect(Collectors.toMap(WorkflowNotificationMail::getId, step -> step));
             
-            // Sauvegarder les nouvelles étapes
+            // Liste pour suivre les IDs des étapes à conserver
+            List<Integer> stepsToKeep = new ArrayList<>();
+            
+            // Traiter chaque étape du DTO
             for (WorkflowStepDto stepDto : configDto.getSteps()) {
-                WorkflowNotificationMail workflow = new WorkflowNotificationMail();
-                workflow.setOrdre(stepDto.getOrdre());
-                workflow.setUtilisateurId(stepDto.getUtilisateurId());
-                workflow.setTypeNotification(typeNotification);
-                workflow.setEstActif(true);
-                workflow.setDateCreation(LocalDateTime.now());
-                
-                workflowRepository.save(workflow);
+                if (stepDto.getId() != null && stepDto.getId() > 0) {
+                    // Étape existante - MISE À JOUR
+                    WorkflowNotificationMail existingStep = existingStepsMap.get(stepDto.getId());
+                    if (existingStep != null) {
+                        existingStep.setOrdre(stepDto.getOrdre());
+                        existingStep.setUtilisateurId(stepDto.getUtilisateurId());
+                        existingStep.setDateModification(LocalDateTime.now());
+                        workflowRepository.save(existingStep);
+                        stepsToKeep.add(stepDto.getId());
+                    }
+                } else {
+                    // NOUVELLE étape - CRÉATION
+                    WorkflowNotificationMail newStep = new WorkflowNotificationMail();
+                    newStep.setOrdre(stepDto.getOrdre());
+                    newStep.setUtilisateurId(stepDto.getUtilisateurId());
+                    newStep.setTypeNotification(typeNotification);
+                    newStep.setEstActif(true);
+                    newStep.setDateCreation(LocalDateTime.now());
+                    
+                    WorkflowNotificationMail savedStep = workflowRepository.save(newStep);
+                    stepsToKeep.add(savedStep.getId());
+                }
             }
+            
+            // Supprimer les étapes qui ne sont plus dans la configuration
+            List<WorkflowNotificationMail> stepsToDelete = existingSteps.stream()
+                    .filter(step -> !stepsToKeep.contains(step.getId()))
+                    .collect(Collectors.toList());
+            
+            if (!stepsToDelete.isEmpty()) {
+                workflowRepository.deleteAll(stepsToDelete);
+            }
+            
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la sauvegarde du workflow", e);
         }
     }
-    
     /**
      * Récupère la liste des utilisateurs internes
      */

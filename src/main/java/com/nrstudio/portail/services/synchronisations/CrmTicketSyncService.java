@@ -60,7 +60,6 @@ public class CrmTicketSyncService {
   }
 
   // Synchronisation planifiée - non interruptible
-  @Scheduled(cron = "${scheduling.crm-ticket-sync-cron:0 * * * * *}")
   @Transactional
   public void importerDepuisCrm() {
     log.info("🚀 Début de la synchronisation planifiée des tickets - {}", LocalDateTime.now());
@@ -341,39 +340,40 @@ public class CrmTicketSyncService {
   }
 
   private Integer mapStageCrmStringToId(String stage, String statut) {
-    if (stage == null) {
-      // Fallback sur Case_Status si Case_Stage est null
-      return mapStatutCrmStringToId(statut);
-    }
-    
-    // Mapping basé sur Case_Stage (les vraies étapes du workflow)
-    switch (stage.toLowerCase()) {
-      case "logged":
-        return 1; // OUVERT
-      case "confirmed":
-        return 2; // EN_COURS
-      case "waiting":
-        return 3; // EN_ATTENTE
-      case "solved":
-        // Si solved, on vérifie Case_Status pour déterminer si c'est résolu ou clos
-        if ("Closed".equals(statut)) {
+      // VÉRIFIER D'ABORD LE STATUT (case_status) POUR DÉTECTER LES TICKETS CLÔTURÉS
+      if ("Closed".equals(statut)) {
           return 7; // CLOTURE
-        } else {
-          return 6; // RESOLU
-        }
-      default:
-        // Fallback sur l'ancienne méthode si stage inconnu
-        return mapStatutCrmStringToId(statut);
-    }
+      }
+      
+      // SI LE STATUT N'EST PAS CLOS, ALORS ON REGARDE LE STAGE (case_stage)
+      if (stage == null) {
+          // Fallback sur Case_Status si Case_Stage est null
+          return mapStatutCrmStringToId(statut);
+      }
+      
+      // Mapping basé sur Case_Stage (les vraies étapes du workflow)
+      switch (stage.toLowerCase()) {
+          case "logged":
+              return 1; // OUVERT
+          case "confirmed":
+              return 2; // EN_COURS
+          case "waiting":
+              return 3; // EN_ATTENTE
+          case "solved":
+              return 6; // RESOLU
+          default:
+              // Fallback sur l'ancienne méthode si stage inconnu
+              return mapStatutCrmStringToId(statut);
+      }
   }
 
-  // Garder l'ancienne méthode pour le fallback
+  // Méthode de fallback pour les statuts
   private Integer mapStatutCrmStringToId(String s) {
-    if (s == null) return 1; // Open
-    if (s.equals("Closed")) return 4;
-    if (s.equals("Pending")) return 3;
-    if (s.equals("In Progress")) return 2;
-    return 1;
+      if (s == null) return 1; // Open par défaut
+      if (s.equals("Closed")) return 7; // Maintenant cohérent avec la méthode principale
+      if (s.equals("Pending")) return 3;
+      if (s.equals("In Progress")) return 2;
+      return 1; // Open
   }
 
   private Integer mapProduitIdToId(Integer produitIdCrm) {

@@ -28,6 +28,9 @@ public class CrmSolutionTicketSyncService {
     private final TicketService ticketService;
     private final SynchronisationManager synchronisationManager;
 
+    // Variable pour suivre le mode de synchronisation
+    private boolean synchronisationManuelleEnCours = false;
+
     public CrmSolutionTicketSyncService(@Qualifier("crmJdbc") JdbcTemplate crmJdbc,
                                        SolutionTicketRepository solutionTicketRepository,
                                        SolutionRepository solutionRepository,
@@ -43,10 +46,10 @@ public class CrmSolutionTicketSyncService {
     }
 
     // Synchronisation planifiée - non interruptible
-    @Scheduled(cron = "${scheduling.crm-solutick-sync-cron:0 * * * * *}")
     @Transactional
-    public void synchroniserLiaisonsSolutionsTickets() {
-        System.out.println("🚀 Début de la synchronisation planifiée des liaisons solutions-tickets");
+    public void synchroniserLiaisonsSolutionsTicketsDynamique() {
+        System.out.println("🚀 Synchronisation via CRON dynamique (DB)");
+        synchronisationManuelleEnCours = false;
         executerSynchronisationPlanifiee();
     }
 
@@ -54,6 +57,7 @@ public class CrmSolutionTicketSyncService {
     @Transactional
     public void synchroniserLiaisonsSolutionsTicketsManuellement() {
         System.out.println("🚀 Début de la synchronisation manuelle des liaisons solutions-tickets");
+        synchronisationManuelleEnCours = true; // Mode manuel
         executerSynchronisationManuelle();
     }
 
@@ -142,6 +146,7 @@ public class CrmSolutionTicketSyncService {
                 System.err.println("❌ Erreur lors de la synchronisation manuelle des liaisons: " + e.getMessage());
             } finally {
                 synchronisationManager.supprimerThread(typeSync);
+                synchronisationManuelleEnCours = false; // Réinitialiser le flag
             }
         });
         
@@ -182,8 +187,12 @@ public class CrmSolutionTicketSyncService {
             
             System.out.println("✅ Liaison créée - Solution: " + solution.getId() + " (" + solution.getTitre() + "), Ticket: " + ticket.getId() + " (" + ticket.getReference() + ")");
             
-            // 5. Envoyer la notification au client
-            envoyerNotificationAjoutSolution(ticket, solution);
+            // 5. Envoyer la notification au client UNIQUEMENT en mode planifié
+            if (!synchronisationManuelleEnCours) {
+                envoyerNotificationAjoutSolution(ticket, solution);
+            } else {
+                System.out.println("🔕 Notification non envoyée (synchronisation manuelle)");
+            }
             
             return true;
         }

@@ -1,4 +1,4 @@
-package com.nrstudio.portail.services;
+package com.nrstudio.portail.services.notification;
 
 import java.util.HashMap;
 import java.util.List;
@@ -166,4 +166,10 @@ public class EmailNotificationService {
         // Simplification pour l'exemple - en réalité il faudrait parser la couleur hex
         return color;
     }
+
+    public void sendPasswordResetEmail(String destinataire, String sujet, String contenuHtml) {
+        String emailComplet = createEmailTemplate(contenuHtml, "password_reset");
+        sendEmail(destinataire, sujet, emailComplet);
+    }
+
 }

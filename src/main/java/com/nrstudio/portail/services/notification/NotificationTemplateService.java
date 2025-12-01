@@ -1,4 +1,4 @@
-package com.nrstudio.portail.services;
+package com.nrstudio.portail.services.notification;
 
 import com.nrstudio.portail.depots.NotificationTemplateRepository;
 import com.nrstudio.portail.depots.TypeNotificationRepository;
@@ -62,20 +62,56 @@ public class NotificationTemplateService {
         return templateRepository.findById(id);
     }
     
+
     /**
-     * Créer un nouveau template
+     * Créer un nouveau template avec création automatique du TypeNotification associé
      */
     public NotificationTemplate createTemplate(NotificationTemplate template) {
+        
         // Vérifier si le code existe déjà
         if (templateRepository.findByCode(template.getCode()).isPresent()) {
             throw new IllegalArgumentException("Un template avec ce code existe déjà");
         }
         
+        // Set template properties
         template.setActif(true);
         template.setDateCreation(LocalDateTime.now());
         template.setDateMiseAJour(LocalDateTime.now());
         
-        return templateRepository.save(template);
+        // Sauvegarder d'abord le template pour obtenir un ID
+        NotificationTemplate savedTemplate = templateRepository.save(template);
+        
+        // Créer automatiquement le TypeNotification associé
+        createAssociatedTypeNotification(savedTemplate);
+        
+        return savedTemplate;
+    }
+
+    /**
+     * Crée un TypeNotification associé au template
+     */
+    private void createAssociatedTypeNotification(NotificationTemplate template) {
+        TypeNotification typeNotification = new TypeNotification();
+        
+        // Utiliser le code du template comme base pour le code du type
+        typeNotification.setCode(template.getCode());
+        
+        // Utiliser le libellé du template comme base pour le libellé du type
+        typeNotification.setLibelle(template.getLibelle());
+        
+        // Description par défaut
+        typeNotification.setDescription("Type de notification généré automatiquement pour le template: " + template.getLibelle());
+        
+        // Associer le template
+        typeNotification.setTemplate(template);
+        
+        // Set autres propriétés
+        typeNotification.setEstActif(true);
+        typeNotification.setDateCreation(LocalDateTime.now());
+        typeNotification.setDateModification(LocalDateTime.now());
+        
+        // Sauvegarder le type de notification
+        typeNotificationRepository.save(typeNotification);
     }
     
     /**

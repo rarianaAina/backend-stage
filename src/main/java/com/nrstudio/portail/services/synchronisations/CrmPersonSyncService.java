@@ -42,7 +42,7 @@ public class CrmPersonSyncService {
   }
 
   // Synchronisation planifiée - non interruptible
-  @Scheduled(cron = "${scheduling.crm-person-sync-cron:0 * * * * *}")
+  //@Scheduled(cron = "${scheduling.crm-person-sync-cron:0 * * * * *}")
   @Transactional
   public void synchroniserPersons() {
     System.out.println("🚀 Début de la synchronisation planifiée des personnes - " + LocalDateTime.now());

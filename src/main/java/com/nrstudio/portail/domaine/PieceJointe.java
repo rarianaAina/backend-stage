@@ -20,6 +20,7 @@ public class PieceJointe {
     @Column(name = "url_contenu", length = 500)
     private String urlContenu;
 
+
     @Column(name = "chemin_fichier", length = 500)
     private String cheminFichier;
 
@@ -29,7 +30,7 @@ public class PieceJointe {
     @Column(name = "taille_octets")
     private Long tailleOctets;
 
-    @Column(name = "ajoute_par_utilisateur_id", nullable = false)
+    @Column(name = "ajoute_par_utilisateur_id", nullable = true)
     private Integer ajouteParUtilisateurId;
 
     @Column(name = "ticket_id")
@@ -44,11 +45,17 @@ public class PieceJointe {
     @Column(name = "date_ajout", nullable = false)
     private LocalDateTime dateAjout;
 
+    @Column(name = "commentaires", length = 500)
+    private String commentaires;
+
+    @Column(name = "id_externe_crm", length = 500)
+    private String idExterneCrm;
+
     // Constructeurs
     public PieceJointe() {}
 
     public PieceJointe(String nomFichier, String urlContenu, String typeMime, Long tailleOctets, 
-                      Integer ajouteParUtilisateurId, Integer ticketId) {
+                      Integer ajouteParUtilisateurId, Integer ticketId, String commentaires) {
         this.nomFichier = nomFichier;
         this.urlContenu = urlContenu;
         this.typeMime = typeMime;
@@ -56,6 +63,7 @@ public class PieceJointe {
         this.ajouteParUtilisateurId = ajouteParUtilisateurId;
         this.ticketId = ticketId;
         this.dateAjout = LocalDateTime.now();
+        this.commentaires = commentaires;
     }
 
     // Getters et Setters
@@ -147,6 +155,8 @@ public class PieceJointe {
         this.dateAjout = dateAjout;
     }
 
+
+
     // Méthode utilitaire pour obtenir l'extension du fichier
     public String getExtension() {
         if (nomFichier == null || !nomFichier.contains(".")) {
@@ -155,6 +165,21 @@ public class PieceJointe {
         return nomFichier.substring(nomFichier.lastIndexOf(".") + 1).toLowerCase();
     }
 
+    public void setCommentaires (String commentaires) {
+        this.commentaires = commentaires;
+    }
+
+    public String getCommentaires () {
+        return commentaires;
+    }
+
+    public void setIdExterneCrm (String idExterneCrm) {
+        this.idExterneCrm = idExterneCrm;
+    }
+
+    public String getIdExterneCrm () {
+        return idExterneCrm;
+    }
     // Méthode utilitaire pour formater la taille
     public String getTailleFormatee() {
         if (tailleOctets == null) return "0 octets";
@@ -177,6 +202,7 @@ public class PieceJointe {
                 ", tailleOctets=" + tailleOctets +
                 ", ticketId=" + ticketId +
                 ", dateAjout=" + dateAjout +
+                ", commentaires=" + commentaires +
                 '}';
     }
 }

@@ -1,7 +1,9 @@
 package com.nrstudio.portail.controleurs;
 
-import com.nrstudio.portail.depots.PieceJointeRepository;
+import com.nrstudio.portail.depots.piecesjointes.PieceJointeRepository;
 import com.nrstudio.portail.domaine.PieceJointe;
+import com.nrstudio.portail.dto.piecejointe.PieceJointeRequest;
+
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -57,14 +59,30 @@ public class PieceJointeControleur {
     return repo.findByInterventionId(interventionId);
   }
 
-  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(value = "/{ticketId}/rajouter", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public PieceJointe televerser(
+    @PathVariable("ticketId") Integer ticketId,
     @RequestParam("fichier") MultipartFile fichier,
-    @RequestParam(value = "ticketId", required = false) Integer ticketId,
-    @RequestParam(value = "interventionId", required = false) Integer interventionId,
-    @RequestParam("utilisateurId") Integer utilisateurId
+    @RequestParam(value = "commentaires", required = false) String commentaires,
+    @RequestParam("utilisateurId") String utilisateurIdStr // Recevoir comme String
   ) {
     try {
+      // Convertir l'ID utilisateur en Integer
+      Integer utilisateurId = Integer.parseInt(utilisateurIdStr);
+      
+      System.out.println("=== UPLOAD FICHIER ===");
+      System.out.println("Ticket ID: " + ticketId);
+      System.out.println("Utilisateur ID: " + utilisateurId);
+      System.out.println("Commentaires: " + commentaires);
+      System.out.println("Nom fichier: " + fichier.getOriginalFilename());
+      System.out.println("Taille: " + fichier.getSize());
+
+      // Validation
+      if (fichier.isEmpty()) {
+        throw new RuntimeException("Le fichier est vide");
+      }
+
+      // Générer un nom de fichier unique
       String nomOriginal = fichier.getOriginalFilename();
       String extension = nomOriginal != null && nomOriginal.contains(".")
         ? nomOriginal.substring(nomOriginal.lastIndexOf("."))
@@ -72,24 +90,32 @@ public class PieceJointeControleur {
       String nomUnique = UUID.randomUUID().toString() + extension;
       Path cheminFichier = Paths.get(repertoireUpload + nomUnique);
 
+      // Créer le dossier si nécessaire
+      Files.createDirectories(cheminFichier.getParent());
+
+      // Sauvegarder le fichier
       Files.copy(fichier.getInputStream(), cheminFichier, StandardCopyOption.REPLACE_EXISTING);
 
+      // Créer et sauvegarder l'entité
       PieceJointe pj = new PieceJointe();
       pj.setTicketId(ticketId);
-      pj.setInterventionId(interventionId);
       pj.setNomFichier(nomOriginal);
       pj.setCheminFichier(cheminFichier.toString());
+      pj.setUrlContenu("/api/pieces-jointes/telecharger/" + nomUnique);
       pj.setTypeMime(fichier.getContentType());
       pj.setTailleOctets(fichier.getSize());
       pj.setAjouteParUtilisateurId(utilisateurId);
       pj.setDateAjout(LocalDateTime.now());
+      pj.setCommentaires(commentaires);
 
       return repo.save(pj);
+      
+    } catch (NumberFormatException e) {
+      throw new RuntimeException("ID utilisateur invalide: " + utilisateurIdStr);
     } catch (IOException e) {
-      throw new RuntimeException("Erreur lors du téléversement du fichier", e);
+      throw new RuntimeException("Erreur lors du téléversement du fichier: " + e.getMessage(), e);
     }
   }
-
   @GetMapping("/telecharger/{id}")
   public ResponseEntity<Resource> telecharger(@PathVariable("id") Integer id) {
     try {

@@ -47,7 +47,7 @@ public class CrmCreditHoraireSyncService {
     }
 
     // Synchronisation planifiée - non interruptible
-    @Scheduled(cron = "${scheduling.crm-ch-sync-cron:0 * * * * *}")
+    //@Scheduled(cron = "${scheduling.crm-ch-sync-cron:0 * * * * *}")
     @Transactional
     public void synchroniserCreditHoraire() {
         logger.info("🚀 Début de la synchronisation planifiée des crédits horaires - {}", LocalDateTime.now());

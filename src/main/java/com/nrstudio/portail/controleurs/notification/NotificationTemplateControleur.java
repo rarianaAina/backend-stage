@@ -1,7 +1,7 @@
 package com.nrstudio.portail.controleurs.notification;
 
 import com.nrstudio.portail.domaine.NotificationTemplate;
-import com.nrstudio.portail.services.NotificationTemplateService;
+import com.nrstudio.portail.services.notification.NotificationTemplateService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

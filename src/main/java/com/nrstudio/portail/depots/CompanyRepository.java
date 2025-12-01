@@ -18,4 +18,6 @@ public interface CompanyRepository extends JpaRepository<Company, Integer> {
     
     // OU Solution 2: Récupérer l'objet Company et extraire le nom
     Optional<Company> findById(Integer companyId);
+
+    
 }

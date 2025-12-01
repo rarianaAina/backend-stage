@@ -19,7 +19,7 @@ public class TypeNotification {
     @Column(name = "description")
     private String description;
     
-    // ✅ CORRECTION : Remplacez templateId par une relation ManyToOne
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "template_id")
     private NotificationTemplate template;
